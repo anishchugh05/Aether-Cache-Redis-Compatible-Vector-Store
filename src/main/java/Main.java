@@ -8,8 +8,16 @@ import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class Main {
+  // Shared key-value store. ConcurrentHashMap is safe to use from multiple client threads.
+  private static final Map<String, String> store = new ConcurrentHashMap<>();
+  // Expiry time for each key (in milliseconds since epoch). Keys with no expiry aren't in here.
+  private static final Map<String, Long> expiries = new ConcurrentHashMap<>();
+  private static final Map<String, List<String>> lists = new ConcurrentHashMap<>();
+
   public static void main(String[] args){
     System.out.println("Logs from your program will appear here!");
 
@@ -44,6 +52,15 @@ public class Main {
           case "ECHO":
             response = bulkString(command.get(1));
             break;
+          case "SET":
+            response = handleSet(command);
+            break;
+          case "GET":
+            response = handleGet(command.get(1));
+            break;
+          case "RPUSH":
+            response = handleRPush(command);
+            break;
           default:
             response = "-ERR unknown command '" + command.get(0) + "'\r\n";
         }
@@ -54,6 +71,47 @@ public class Main {
     }
   }
 
+  private static String handleSet(List<String> command) {
+    String key = command.get(1);
+    String value = command.get(2);
+    store.put(key, value);
+    expiries.remove(key); // a plain SET clears any old expiry
+
+    // Look for options after the value, like PX 100 or EX 10
+    for (int i = 3; i + 1 < command.size(); i += 2) {
+      String option = command.get(i).toUpperCase();
+      long amount = Long.parseLong(command.get(i + 1));
+      if (option.equals("PX")) {
+        expiries.put(key, System.currentTimeMillis() + amount);
+      } else if (option.equals("EX")) {
+        expiries.put(key, System.currentTimeMillis() + amount * 1000);
+      }
+    }
+    return "+OK\r\n";
+  }
+
+  private static String handleGet(String key) {
+    Long expiresAt = expiries.get(key);
+    if (expiresAt != null && System.currentTimeMillis() >= expiresAt) {
+      // Key has expired: delete it and act like it doesn't exist
+      store.remove(key);
+      expiries.remove(key);
+      return "$-1\r\n";
+    }
+    String value = store.get(key);
+    return (value == null) ? "$-1\r\n" : bulkString(value);
+  }
+
+  private static String handleRPush(List<String> command) {
+    String key = command.get(1);
+    List<String> list = lists.computeIfAbsent(key, k -> new ArrayList<>());
+    synchronized (list) {
+      for (int i = 2; i < command.size(); i++) {
+        list.add(command.get(i));
+      }
+      return ":" + list.size() + "\r\n"; // return the new length of the list
+    }
+  }
   // Parses one RESP array like *2\r\n$4\r\nECHO\r\n$3\r\nhey\r\n into ["ECHO", "hey"]
   private static List<String> readCommand(InputStream in) throws IOException {
     String header = readLine(in);
