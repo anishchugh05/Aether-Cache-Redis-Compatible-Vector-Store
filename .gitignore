@@ -1,3 +1,4 @@
 *.jar
 target/
 .idea/
+src/main/java/embeddings_cache.npz

@@ -22,7 +22,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.io.FileOutputStream;
-import java.io.FileInputStream;
 import java.util.HashSet;
 import java.util.TreeSet;
 import java.math.BigDecimal;
@@ -30,6 +29,12 @@ import java.util.Arrays;
 import java.util.Locale;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.PriorityQueue;
+import java.util.Random;
+import java.io.ByteArrayInputStream;
+import java.io.EOFException;
+import java.nio.channels.FileChannel;
+import java.nio.file.StandardOpenOption;
 
 public class Main {
   // Shared key-value store. ConcurrentHashMap is safe to use from multiple client threads.
@@ -53,6 +58,7 @@ public class Main {
   private static String appendfilename = "appendonly.aof";
   private static String appendfsync = "everysec";
   private static FileOutputStream aofOut = null;
+  private static volatile boolean aofDirty = false;
   private static final String masterReplId = "8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb";
   private static long masterReplOffset = 0;
   private static final List<OutputStream> replicas = new CopyOnWriteArrayList<>();
@@ -69,7 +75,7 @@ public class Main {
   private static final List<String> defaultPasswordHashes = new CopyOnWriteArrayList<>();
   private static final Set<String> SUBSCRIBED_MODE_COMMANDS =
       Set.of("SUBSCRIBE", "UNSUBSCRIBE", "PSUBSCRIBE", "PUNSUBSCRIBE", "PING", "QUIT", "RESET");
-  private static final Set<String> WRITE_COMMANDS = Set.of("SET", "INCR", "RPUSH", "LPUSH", "LPOP", "XADD");
+  private static final Set<String> WRITE_COMMANDS = Set.of("SET", "INCR", "RPUSH", "LPUSH", "LPOP", "XADD", "VADD");
   private static final String EMPTY_RDB_BASE64 =
       "UkVESVMwMDEx+glyZWRpcy12ZXIFNy4yLjD6CnJlZGlzLWJpdHPAQPoFY3RpbWXCbQi8ZfoIdXNlZC1tZW3CsMQQAPoIYW9mLWJhc2XAAP/wbjv+wP9aog==";
   private static String masterHost = null;
@@ -77,6 +83,243 @@ public class Main {
   // Connection to the master, kept open for the rest of the handshake in later stages
   private static Socket masterSocket = null;
   private static long replicaOffset = 0;
+
+  // Vector sets, one per key (for VADD / VSEARCH)
+  private static final Map<String, VectorSet> vectorSets = new ConcurrentHashMap<>();
+
+  // A set of vectors with ids. All vectors in a set have the same number of dimensions.
+  // Vectors are stored normalized (length 1), so cosine similarity is just a dot product.
+  // A set of vectors with ids, searchable two ways:
+  //  - exact: compare against every vector (slow, always right; used to measure recall)
+  //  - HNSW: a layered graph where each vector links to its nearest neighbors, so a search only
+  //    walks a small part of the data (fast, very slightly approximate)
+  // Vectors are stored normalized (length 1), so cosine similarity is just a dot product.
+  static class VectorSet {
+    // HNSW settings: links per node on upper layers (M) and on the bottom layer (M0),
+    // and how wide the search is while building the graph
+    static final int M = 16;
+    static final int M0 = 32;
+    static final int EF_CONSTRUCTION = 200;
+
+    final int dim;
+    final List<String> ids = new ArrayList<>();      // node number -> id
+    final List<float[]> vecs = new ArrayList<>();    // node number -> vector
+    final Map<String, Integer> nodeOf = new HashMap<>(); // id -> node number
+
+    // Graph: links.get(node)[layer] holds that node's neighbors on that layer; counts says how many are used
+    final List<int[][]> links = new ArrayList<>();
+    final List<int[]> counts = new ArrayList<>();
+    int entryPoint = -1; // search starts here (a node on the top layer)
+    int maxLevel = -1;
+    final double levelMult = 1 / Math.log(M);
+    final Random rng = new Random(42);
+
+    // "Visited" marks for a search, reused between searches to avoid allocating every time
+    int[] visited = new int[16];
+    int visitStamp = 0;
+
+    VectorSet(int dim) {
+      this.dim = dim;
+    }
+
+    // A node plus its similarity to the current query
+    static class Cand {
+      final int node;
+      final double sim;
+      Cand(int node, double sim) { this.node = node; this.sim = sim; }
+    }
+
+    // Adds a vector. Returns true if the id is new. Re-adding an id updates its vector in place.
+    synchronized boolean add(String id, float[] vector) {
+      float[] v = normalize(vector);
+      Integer existing = nodeOf.get(id);
+      if (existing != null) {
+        vecs.set(existing, v);
+        return false;
+      }
+      int node = vecs.size();
+      ids.add(id);
+      vecs.add(v);
+      nodeOf.put(id, node);
+      if (visited.length <= node) visited = Arrays.copyOf(visited, visited.length * 2);
+      insert(node);
+      return true;
+    }
+
+    private void insert(int node) {
+      // Random top layer for this node: most nodes only live on layer 0, a few reach higher
+      int level = (int) Math.floor(-Math.log(1 - rng.nextDouble()) * levelMult);
+      int[][] nodeLinks = new int[level + 1][];
+      for (int l = 0; l <= level; l++) nodeLinks[l] = new int[l == 0 ? M0 : M];
+      links.add(nodeLinks);
+      counts.add(new int[level + 1]);
+
+      if (entryPoint == -1) { // first node
+        entryPoint = node;
+        maxLevel = level;
+        return;
+      }
+
+      float[] q = vecs.get(node);
+      int ep = entryPoint;
+      // Above this node's top layer: just walk greedily toward the new vector
+      for (int l = maxLevel; l > level; l--) ep = greedy(q, ep, l);
+      // On each layer the node lives on: find close nodes and link to the best of them
+      for (int l = Math.min(level, maxLevel); l >= 0; l--) {
+        List<Cand> found = searchLayer(q, ep, EF_CONSTRUCTION, l);
+        for (Cand c : selectNeighbors(found, M)) {
+          addLink(node, c.node, l);
+          addLink(c.node, node, l);
+        }
+        ep = found.get(0).node;
+      }
+      if (level > maxLevel) { // new tallest node becomes the entry point
+        maxLevel = level;
+        entryPoint = node;
+      }
+    }
+
+    // Adds 'to' to 'from's neighbors on a layer; if that's over the limit, keeps only the best ones
+    private void addLink(int from, int to, int layer) {
+      int[] list = links.get(from)[layer];
+      int[] cnt = counts.get(from);
+      if (cnt[layer] < list.length) {
+        list[cnt[layer]++] = to;
+        return;
+      }
+      float[] fv = vecs.get(from);
+      List<Cand> all = new ArrayList<>();
+      for (int i = 0; i < cnt[layer]; i++) all.add(new Cand(list[i], dot(fv, vecs.get(list[i]))));
+      all.add(new Cand(to, dot(fv, vecs.get(to))));
+      all.sort((a, b) -> Double.compare(b.sim, a.sim));
+      List<Cand> keep = selectNeighbors(all, list.length);
+      cnt[layer] = keep.size();
+      for (int i = 0; i < keep.size(); i++) list[i] = keep.get(i).node;
+    }
+
+    // Picks up to m neighbors from candidates (sorted best-first), preferring ones that point in
+    // different directions, so the graph stays well connected instead of clumping
+    private List<Cand> selectNeighbors(List<Cand> cands, int m) {
+      List<Cand> chosen = new ArrayList<>();
+      List<Cand> skipped = new ArrayList<>();
+      for (Cand c : cands) {
+        if (chosen.size() >= m) break;
+        boolean diverse = true;
+        for (Cand r : chosen) {
+          // skip c if it's closer to an already-chosen neighbor than to the query itself
+          if (dot(vecs.get(c.node), vecs.get(r.node)) > c.sim) { diverse = false; break; }
+        }
+        if (diverse) chosen.add(c); else skipped.add(c);
+      }
+      for (Cand c : skipped) { // top up with the best skipped ones if we're short
+        if (chosen.size() >= m) break;
+        chosen.add(c);
+      }
+      return chosen;
+    }
+
+    // Walks to whichever neighbor is more similar, until none is; returns where it stopped
+    private int greedy(float[] q, int ep, int layer) {
+      int best = ep;
+      double bestSim = dot(q, vecs.get(ep));
+      boolean moved = true;
+      while (moved) {
+        moved = false;
+        int[] list = links.get(best)[layer];
+        int n = counts.get(best)[layer];
+        for (int i = 0; i < n; i++) {
+          double sim = dot(q, vecs.get(list[i]));
+          if (sim > bestSim) { bestSim = sim; best = list[i]; moved = true; }
+        }
+      }
+      return best;
+    }
+
+    // Best-first search on one layer, tracking the ef closest nodes found. Returns them best-first.
+    private List<Cand> searchLayer(float[] q, int ep, int ef, int layer) {
+      visitStamp++;
+      PriorityQueue<Cand> toExplore = new PriorityQueue<>((a, b) -> Double.compare(b.sim, a.sim)); // best first
+      PriorityQueue<Cand> results = new PriorityQueue<>((a, b) -> Double.compare(a.sim, b.sim));   // worst on top
+      Cand start = new Cand(ep, dot(q, vecs.get(ep)));
+      toExplore.add(start);
+      results.add(start);
+      visited[ep] = visitStamp;
+
+      while (!toExplore.isEmpty()) {
+        Cand c = toExplore.poll();
+        if (c.sim < results.peek().sim && results.size() >= ef) break; // nothing better left to find
+        int[][] nodeLinks = links.get(c.node);
+        if (layer >= nodeLinks.length) continue;
+        int[] list = nodeLinks[layer];
+        int n = counts.get(c.node)[layer];
+        for (int i = 0; i < n; i++) {
+          int nb = list[i];
+          if (visited[nb] == visitStamp) continue;
+          visited[nb] = visitStamp;
+          double sim = dot(q, vecs.get(nb));
+          if (results.size() < ef || sim > results.peek().sim) {
+            Cand nc = new Cand(nb, sim);
+            toExplore.add(nc);
+            results.add(nc);
+            if (results.size() > ef) results.poll();
+          }
+        }
+      }
+      List<Cand> out = new ArrayList<>(results);
+      out.sort((a, b) -> Double.compare(b.sim, a.sim));
+      return out;
+    }
+
+    // HNSW search: drop down the layers greedily, then do a wider search (ef) on the bottom layer
+    synchronized List<Map.Entry<String, Double>> search(float[] query, int k, int ef) {
+      List<Map.Entry<String, Double>> result = new ArrayList<>();
+      if (entryPoint == -1) return result;
+      float[] q = normalize(query);
+      int ep = entryPoint;
+      for (int l = maxLevel; l > 0; l--) ep = greedy(q, ep, l);
+      List<Cand> found = searchLayer(q, ep, Math.max(ef, k), 0);
+      for (int i = 0; i < Math.min(k, found.size()); i++) {
+        result.add(Map.entry(ids.get(found.get(i).node), found.get(i).sim));
+      }
+      return result;
+    }
+
+    // Exact search: compare the query against every vector, keep the k most similar
+    synchronized List<Map.Entry<String, Double>> searchExact(float[] query, int k) {
+      float[] q = normalize(query);
+      // Min-heap of size k: the weakest of the current top-k sits on top, ready to be replaced
+      PriorityQueue<Cand> top = new PriorityQueue<>((a, b) -> Double.compare(a.sim, b.sim));
+      for (int node = 0; node < vecs.size(); node++) {
+        double sim = dot(q, vecs.get(node));
+        if (top.size() < k) {
+          top.add(new Cand(node, sim));
+        } else if (sim > top.peek().sim) {
+          top.poll();
+          top.add(new Cand(node, sim));
+        }
+      }
+      List<Cand> sorted = new ArrayList<>(top);
+      sorted.sort((a, b) -> Double.compare(b.sim, a.sim));
+      List<Map.Entry<String, Double>> result = new ArrayList<>();
+      for (Cand c : sorted) result.add(Map.entry(ids.get(c.node), c.sim));
+      return result;
+    }
+  }
+
+  static float[] normalize(float[] v) {
+    double sum = 0;
+    for (float x : v) sum += x * x;
+    double len = Math.sqrt(sum);
+    float[] out = new float[v.length];
+    for (int i = 0; i < v.length; i++) out[i] = (float) (len == 0 ? 0 : v[i] / len);
+    return out;
+  }
+
+  static double dot(float[] a, float[] b) {
+    double sum = 0;
+    for (int i = 0; i < a.length; i++) sum += a[i] * b[i];
+    return sum;
+  }
 
   // Sorted sets, one per key
   private static final Map<String, SortedSet> sortedSets = new ConcurrentHashMap<>();
@@ -185,16 +428,51 @@ public class Main {
         // so replayed commands don't get written to the file a second time.
         Path aofFile = aofDir.resolve(activeFile);
         if (Files.exists(aofFile)) {
-          try (InputStream in = new BufferedInputStream(new FileInputStream(aofFile.toFile()))) {
+          byte[] data = Files.readAllBytes(aofFile);
+          ByteArrayInputStream in = new ByteArrayInputStream(data);
+          int goodBytes = 0; // how much of the file is complete commands
+          while (true) {
             List<String> command;
-            while ((command = readCommand(in)) != null) {
-              executeCommand(command);
+            try {
+              command = readCommand(in);
+            } catch (Exception e) {
+              break; // the file ends partway through a command
+            }
+            if (command == null) break;
+            executeCommand(command);
+            goodBytes = data.length - in.available();
+          }
+          // A crash in the middle of a write can leave half a command at the end.
+          // Drop it (like Redis's aof-load-truncated) so the server can still start.
+          if (goodBytes < data.length) {
+            System.out.println("AOF ends with an incomplete command; dropping the last "
+                + (data.length - goodBytes) + " bytes");
+            try (FileChannel ch = FileChannel.open(aofFile, StandardOpenOption.WRITE)) {
+              ch.truncate(goodBytes);
             }
           }
         }
 
         // Open it for appending (this also creates it if it doesn't exist yet)
         aofOut = new FileOutputStream(aofFile.toFile(), true);
+        // everysec: a background thread flushes new writes to disk once per second
+        if (appendfsync.equals("everysec")) {
+          Thread syncer = new Thread(() -> {
+            while (true) {
+              try {
+                Thread.sleep(1000);
+                if (aofDirty) {
+                  aofDirty = false;
+                  aofOut.getFD().sync();
+                }
+              } catch (Exception e) {
+                System.out.println("AOF background sync failed: " + e.getMessage());
+              }
+            }
+          });
+          syncer.setDaemon(true); // don't keep the program alive just for this thread
+          syncer.start();
+        }
       } catch (IOException e) {
         System.out.println("Couldn't set up AOF: " + e.getMessage());
       }
@@ -265,7 +543,10 @@ public class Main {
       sendCommand(aofOut, command.toArray(new String[0])); // same RESP encoding as over the network
       if (appendfsync.equals("always")) {
         aofOut.getFD().sync(); // force it onto the disk before we reply to the client
+      } else if (appendfsync.equals("everysec")) {
+        aofDirty = true;       // the background thread will sync it within a second
       }
+      // "no": don't sync at all; the operating system writes it to disk whenever it chooses
     } catch (IOException e) {
       System.out.println("Couldn't write to AOF: " + e.getMessage());
     }
@@ -495,7 +776,7 @@ public class Main {
   private static String executeCommand(List<String> command) {
     String name = command.get(0).toUpperCase();
     switch (name) {
-      case "SET": case "INCR": case "RPUSH": case "LPUSH": case "LPOP": case "BLPOP": case "XADD":
+      case "SET": case "INCR": case "RPUSH": case "LPUSH": case "LPOP": case "BLPOP": case "XADD": case "VADD":
         keyVersions.merge(command.get(1), 1L, Long::sum);
     }
     if (WRITE_COMMANDS.contains(name)) {
@@ -523,6 +804,8 @@ public class Main {
       case "GEOPOS": return handleGeopos(command);
       case "GEODIST": return handleGeodist(command);
       case "GEOSEARCH": return handleGeosearch(command);
+      case "VADD":   return handleVadd(command);
+      case "VSEARCH": return handleVsearch(command);
       case "ZADD":   return handleZadd(command);
       case "ZRANK":  return handleZrank(command.get(1), command.get(2));
       case "ZRANGE": return handleZrange(command);
@@ -802,6 +1085,63 @@ public class Main {
     x = (x | (x << 2)) & 0x3333333333333333L;
     x = (x | (x << 1)) & 0x5555555555555555L;
     return x;
+  }
+
+  // VADD <key> <id> <x1> <x2> ... <xn>: stores a vector. Returns 1 if the id is new, 0 if replaced.
+  private static String handleVadd(List<String> command) {
+    String key = command.get(1);
+    String id = command.get(2);
+    float[] vector = parseVector(command, 3);
+    if (vector == null) return "-ERR vector values must be numbers\r\n";
+
+    VectorSet set = vectorSets.computeIfAbsent(key, k -> new VectorSet(vector.length));
+    if (vector.length != set.dim) {
+      return "-ERR vector has " + vector.length + " dimensions, but this set uses " + set.dim + "\r\n";
+    }
+    return ":" + (set.add(id, vector) ? 1 : 0) + "\r\n";
+  }
+
+  // VSEARCH <key> <k> <x1> <x2> ... <xn>: the k most similar vectors as [id, score, id, score, ...]
+  private static String handleVsearch(List<String> command) {
+    VectorSet set = vectorSets.get(command.get(1));
+    if (set == null) return "*0\r\n";
+    int k = Integer.parseInt(command.get(2));
+
+    int ef = 100;
+    boolean exact = false;
+    int pos = 3;
+    while (pos < command.size()) {
+      String opt = command.get(pos).toUpperCase();
+      if (opt.equals("EF")) { ef = Integer.parseInt(command.get(pos + 1)); pos += 2; }
+      else if (opt.equals("EXACT")) { exact = true; pos++; }
+      else break; // the vector starts here
+    }
+
+    float[] query = parseVector(command, pos);
+    if (query == null) return "-ERR vector values must be numbers\r\n";
+    if (query.length != set.dim) {
+      return "-ERR query has " + query.length + " dimensions, but this set uses " + set.dim + "\r\n";
+    }
+
+    List<Map.Entry<String, Double>> results = exact ? set.searchExact(query, k) : set.search(query, k, ef);
+    StringBuilder sb = new StringBuilder();
+    sb.append("*").append(results.size() * 2).append("\r\n");
+    for (Map.Entry<String, Double> r : results) {
+      sb.append(bulkString(r.getKey()));
+      sb.append(bulkString(String.format(Locale.US, "%.6f", r.getValue())));
+    }
+    return sb.toString();
+  }
+
+  // Reads command parts from 'start' to the end as floats, or null if any isn't a number
+  private static float[] parseVector(List<String> command, int start) {
+    float[] v = new float[command.size() - start];
+    try {
+      for (int i = 0; i < v.length; i++) v[i] = Float.parseFloat(command.get(start + i));
+    } catch (NumberFormatException e) {
+      return null;
+    }
+    return v;
   }
 
   // ZADD <key> <score> <member>: returns 1 if the member is new, 0 if it already existed
@@ -1430,9 +1770,11 @@ public class Main {
     List<String> parts = new ArrayList<>();
     for (int i = 0; i < count; i++) {
       String lenLine = readLine(in);
+      if (lenLine == null) throw new EOFException("connection closed mid-command");
       int len = Integer.parseInt(lenLine.substring(1)); // skip '$'
       byte[] data = in.readNBytes(len);
-      readLine(in); // consume the \r\n after the data
+      // Make sure the whole value and its \r\n actually arrived, not just part of it
+      if (data.length < len || readLine(in) == null) throw new EOFException("connection closed mid-command");
       parts.add(new String(data, StandardCharsets.ISO_8859_1));
     }
     return parts;

@@ -1,0 +1,73 @@
+{
+  "environment": {
+    "timestamp": "2026-09-30T16:23:33",
+    "os": "macOS-26.6.2-arm64-arm-64bit",
+    "architecture": "arm64",
+    "python": "3.9.21",
+    "numpy": "2.0.1",
+    "redis_py": "5.0.1",
+    "cpu": "Apple M4",
+    "cpu_cores": 10,
+    "ram_gb": 16.0,
+    "java": "openjdk version \"11.0.26\" 2025-01-21 LTS"
+  },
+  "settings": {
+    "dataset": "fancyzhx/ag_news (train = documents, test = queries)",
+    "embedding_model": "all-MiniLM-L6-v2",
+    "documents": 100000,
+    "queries": 500,
+    "dimensions": 384,
+    "k": 10,
+    "similarity": "cosine",
+    "hnsw": {
+      "M": 16,
+      "M0": 32,
+      "efConstruction": 200
+    },
+    "latency_measured": "client-side (redis-py, includes network and client overhead)"
+  },
+  "index_build_seconds": 135.8,
+  "results": [
+    {
+      "mode": "EXACT",
+      "recall_at_10": 1.0,
+      "p50_ms": 18.583,
+      "p99_ms": 20.518
+    },
+    {
+      "mode": "HNSW ef=10",
+      "ef": 10,
+      "recall_at_10": 0.905,
+      "p50_ms": 0.486,
+      "p99_ms": 1.376
+    },
+    {
+      "mode": "HNSW ef=20",
+      "ef": 20,
+      "recall_at_10": 0.9512,
+      "p50_ms": 0.517,
+      "p99_ms": 0.729
+    },
+    {
+      "mode": "HNSW ef=50",
+      "ef": 50,
+      "recall_at_10": 0.985,
+      "p50_ms": 0.656,
+      "p99_ms": 0.891
+    },
+    {
+      "mode": "HNSW ef=100",
+      "ef": 100,
+      "recall_at_10": 0.9942,
+      "p50_ms": 0.844,
+      "p99_ms": 1.413
+    },
+    {
+      "mode": "HNSW ef=200",
+      "ef": 200,
+      "recall_at_10": 0.9978,
+      "p50_ms": 1.244,
+      "p99_ms": 2.187
+    }
+  ]
+}
