@@ -95,7 +95,7 @@ public class Main {
     final String text;
     final String source;       // which tool saved it, e.g. "claude-code"
     final String session;      // which session of that tool, if known
-    final List<String> files;  // files this memory is about (used for staleness later)
+    volatile List<String> files; // files this memory depends on, as "path@git-hash" (or just "path")
     final long createdAt;      // unix time in ms
     volatile String status = "active"; // "active", "stale" or "superseded"
     // Everything that has happened to this memory, oldest first: {time in ms, event, details}
@@ -866,6 +866,8 @@ public class Main {
       case "MEM.SEEN":   return handleMemSeen(command);
       case "MEM.CONFLICTS": return handleMemConflicts(command);
       case "MEM.RESOLVE":   return handleMemResolve(command);
+      case "MEM.LIST":      return handleMemList(command);
+      case "MEM.FILES":     return handleMemFiles(command);
       case "VADD":   return handleVadd(command);
       case "VSEARCH": return handleVsearch(command);
       case "ZADD":   return handleZadd(command);
@@ -1285,6 +1287,58 @@ public class Main {
     List<String> logged = new ArrayList<>(List.of("MEM.SEEN", m.id, "SOURCE", source));
     if (!session.isEmpty()) { logged.add("SESSION"); logged.add(session); }
     if (!text.isEmpty()) { logged.add("TEXT"); logged.add(text); }
+    logged.add("AT");
+    logged.add(String.valueOf(at));
+    propagate(logged);
+    appendToAof(logged);
+    return "+OK\r\n";
+  }
+
+  // MEM.LIST <project> [STATUS <active|stale|superseded|any>]: the project's memories, oldest first,
+  // each as [id, status, files, text]. Default: active only.
+  private static String handleMemList(List<String> command) {
+    if (command.size() != 2 && command.size() != 4) return "-ERR usage: MEM.LIST <project> [STATUS <status>]\r\n";
+    String project = command.get(1);
+    String wanted = command.size() == 4 ? command.get(3).toLowerCase() : "active";
+    if (!wanted.equals("any") && !MEMORY_STATUSES.contains(wanted)) {
+      return "-ERR STATUS must be one of: active, stale, superseded, any\r\n";
+    }
+    List<Memory> list = new ArrayList<>();
+    for (Memory m : memories.values()) {
+      if (m.project.equals(project) && (wanted.equals("any") || m.status.equals(wanted))) list.add(m);
+    }
+    list.sort((a, b) -> Long.compare(a.createdAt, b.createdAt));
+    StringBuilder sb = new StringBuilder("*" + list.size() + "\r\n");
+    for (Memory m : list) {
+      sb.append("*4\r\n").append(bulkString(m.id)).append(bulkString(m.status))
+        .append(bulkString(String.join(",", m.files))).append(bulkString(m.text));
+    }
+    return sb.toString();
+  }
+
+  // MEM.FILES <id> <file1,file2,...> [REASON <text>] [AT <ms>]: re-links a memory to (new versions of) files,
+  // e.g. after confirming it's still true even though a linked file changed
+  private static String handleMemFiles(List<String> command) {
+    if (command.size() < 3) return "-ERR usage: MEM.FILES <id> <file1,file2,...> [REASON <text>]\r\n";
+    Memory m = memories.get(command.get(1));
+    if (m == null) return "-ERR no memory with id '" + command.get(1) + "'\r\n";
+    List<String> files = new ArrayList<>();
+    for (String f : command.get(2).split(",")) if (!f.isBlank()) files.add(f.trim());
+    String reason = "";
+    long at = -1;
+    for (int pos = 3; pos + 1 < command.size(); pos += 2) {
+      String opt = command.get(pos).toUpperCase();
+      if (opt.equals("REASON")) reason = command.get(pos + 1);
+      else if (opt.equals("AT")) at = Long.parseLong(command.get(pos + 1));
+      else return "-ERR unknown MEM.FILES option '" + command.get(pos) + "'\r\n";
+    }
+    if (at == -1) at = System.currentTimeMillis();
+    m.files = files;
+    m.history.add(new String[] {String.valueOf(at), "re-linked",
+        "to " + String.join(", ", files) + (reason.isEmpty() ? "" : " (" + reason + ")")});
+
+    List<String> logged = new ArrayList<>(List.of("MEM.FILES", m.id, String.join(",", files)));
+    if (!reason.isEmpty()) { logged.add("REASON"); logged.add(reason); }
     logged.add("AT");
     logged.add(String.valueOf(at));
     propagate(logged);

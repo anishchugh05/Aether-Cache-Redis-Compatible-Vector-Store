@@ -108,6 +108,72 @@ def when(ms: str) -> str:
     return datetime.fromtimestamp(int(ms) / 1000).strftime("%Y-%m-%d %H:%M")
 
 
+# ---------- git-aware staleness ----------
+
+def repo_root() -> Path:
+    """The git repo's top folder (file paths in memories are relative to it), else the current folder."""
+    try:
+        top = subprocess.run(["git", "rev-parse", "--show-toplevel"], capture_output=True, text=True, timeout=5)
+        if top.returncode == 0 and top.stdout.strip():
+            return Path(top.stdout.strip())
+    except Exception:
+        pass
+    return Path.cwd()
+
+
+def relative(path: str) -> str:
+    """Makes a path repo-relative, so memories still match if the repo is opened from a subfolder."""
+    p = Path(path)
+    if p.is_absolute():
+        try:
+            return str(p.resolve().relative_to(repo_root().resolve()))
+        except ValueError:
+            return str(p)
+    return path.strip()
+
+
+def content_hashes(paths: List[str]) -> dict:
+    """path -> git hash of the file's current contents (what git would store), or "missing"."""
+    root = repo_root()
+    result = {p: "missing" for p in paths}
+    present = [p for p in paths if (root / p).is_file()]
+    if present:
+        out = subprocess.run(["git", "hash-object", "--"] + present, cwd=root,
+                             capture_output=True, text=True, timeout=20)
+        if out.returncode == 0:
+            for p, h in zip(present, out.stdout.split()):
+                result[p] = h
+    return result
+
+
+def link_files(paths: List[str]) -> str:
+    """["a.py", "b.yml"] -> "a.py@<hash>,b.yml@<hash>": the files plus a snapshot of their contents."""
+    rel = [relative(p) for p in paths if p.strip()]
+    hashes = content_hashes(rel)
+    return ",".join(f"{p}@{hashes[p]}" for p in rel)
+
+
+def check_staleness() -> List[str]:
+    """Marks active memories stale when a file they depend on has changed since they were saved.
+    Returns one line per memory that just went stale."""
+    newly_stale = []
+    linked = []  # (id, text, [(path, saved hash)])
+    for mid, _status, files, text in db().execute_command("MEM.LIST", project_name()):
+        entries = [f.rsplit("@", 1) for f in files.split(",") if "@" in f]
+        if entries:
+            linked.append((mid, text, entries))
+    if not linked:
+        return newly_stale
+    current = content_hashes(sorted({path for _, _, entries in linked for path, _ in entries}))
+    for mid, text, entries in linked:
+        changed = [path for path, saved in entries if current.get(path) != saved]
+        if changed:
+            what = ", ".join(f"{p} {'was deleted' if current.get(p) == 'missing' else 'changed'}" for p in changed)
+            db().execute_command("MEM.STATUS", mid, "stale", "REASON", f"{what} since this was saved")
+            newly_stale.append(f"[{mid}] \"{text}\" is now marked outdated: {what}.")
+    return newly_stale
+
+
 # ---------- tools the AI can call ----------
 
 @mcp.tool()
@@ -121,7 +187,7 @@ def remember(fact: str, files: Optional[List[str]] = None) -> str:
     """
     args = ["MEM.ADD", project_name(), fact, "SOURCE", SOURCE, "SESSION", SESSION]
     if files:
-        args += ["FILES", ",".join(f.strip() for f in files if f.strip())]
+        args += ["FILES", link_files(files)]
     vector = embed(fact)
     try:
         mem_id, outcome, related = db().execute_command(*args, "VECTOR", *vector)
@@ -153,12 +219,17 @@ def recall(query: str, limit: int = 5) -> str:
     project-specific knowledge (setup, conventions, past decisions) might matter.
     Only current (active) memories are returned; outdated or replaced ones are skipped."""
     try:
+        stale = check_staleness()  # so we never hand back a memory whose files changed underneath it
         hits = db().execute_command("MEM.SEARCH", project_name(), max(1, min(limit, 20)), "VECTOR", *embed(query))
     except redis.ConnectionError:
         return store_down()
-    if not hits:
-        return "No memories found for this project yet."
-    return "\n".join(f"[{mid}] (similarity {float(score):.2f}) {text}" for mid, score, text in hits)
+    lines = [f"[{mid}] (similarity {float(score):.2f}) {text}" for mid, score, text in hits]
+    if not lines:
+        lines = ["No memories found for this project yet."]
+    if stale:
+        lines += ["", "These memories were just retired because files they depend on changed. If one is still "
+                      "true, call confirm_memory; if it's wrong, save the corrected fact with remember:"] + stale
+    return "\n".join(lines)
 
 
 @mcp.tool()
@@ -209,6 +280,34 @@ def replace_memory(old_id: str, new_id: str) -> str:
     except redis.ResponseError as e:
         return f"Couldn't replace: {e}"
     return f"{old_id} retired; {new_id} replaces it."
+
+
+@mcp.tool()
+def check_stale() -> str:
+    """Check whether any memory's linked files have changed since it was saved, and retire those
+    memories. recall already does this automatically; call it directly after big changes."""
+    try:
+        stale = check_staleness()
+    except redis.ConnectionError:
+        return store_down()
+    return "\n".join(stale) if stale else "All memories linked to files are still up to date."
+
+
+@mcp.tool()
+def confirm_memory(memory_id: str) -> str:
+    """Mark a memory as still true (e.g. after it was retired because a linked file changed, but the
+    fact itself didn't). Re-links it to the current version of its files."""
+    try:
+        r = db().execute_command("MEM.GET", memory_id)
+        if r is None:
+            return f"No memory with id {memory_id}."
+        files = [f.rsplit("@", 1)[0] for f in dict(zip(r[0::2], r[1::2]))["files"].split(",") if f]
+        if files:
+            db().execute_command("MEM.FILES", memory_id, link_files(files), "REASON", "confirmed still true")
+        db().execute_command("MEM.STATUS", memory_id, "active", "REASON", "confirmed still true")
+    except redis.ConnectionError:
+        return store_down()
+    return f"Confirmed {memory_id}; it's active again" + (" and linked to the current file versions." if files else ".")
 
 
 @mcp.tool()
