@@ -310,6 +310,62 @@ def confirm_memory(memory_id: str) -> str:
     return f"Confirmed {memory_id}; it's active again" + (" and linked to the current file versions." if files else ".")
 
 
+# ---------- syncing to AGENTS.md / CLAUDE.md ----------
+
+SYNC_START = "<!-- memstore:start -->"
+SYNC_END = "<!-- memstore:end -->"
+SYNC_FILES = ["AGENTS.md", "CLAUDE.md"]
+
+
+def memory_block() -> str:
+    rows = db().execute_command("MEM.LIST", project_name())
+    lines = [SYNC_START,
+             "## Project memory (managed by memstore)",
+             "<!-- Generated from memstore; edits inside this section are overwritten on the next sync. -->",
+             ""]
+    lines += [f"- {text} ({mid})" for mid, _status, _files, text in rows] or ["_No memories yet._"]
+    lines.append(SYNC_END)
+    return "\n".join(lines)
+
+
+def sync_files() -> str:
+    """Writes the project's active memories into the managed section of AGENTS.md / CLAUDE.md.
+    Only the section between the markers is touched; files that don't exist aren't created, unless
+    neither exists, in which case AGENTS.md is."""
+    root = repo_root()
+    block = memory_block()
+    targets = [root / name for name in SYNC_FILES if (root / name).exists()] or [root / "AGENTS.md"]
+    report = []
+    for path in targets:
+        old = path.read_text() if path.exists() else ""
+        if SYNC_START in old and SYNC_END in old:
+            before = old[:old.index(SYNC_START)]
+            after = old[old.index(SYNC_END) + len(SYNC_END):]
+            new = before + block + after
+        else:
+            new = (old.rstrip() + "\n\n" if old.strip() else "") + block + "\n"
+        if new == old:
+            report.append(f"{path.name}: already up to date")
+            continue
+        tmp = path.with_name(path.name + ".memstore-tmp")
+        tmp.write_text(new)
+        os.replace(tmp, path)  # swap in the new version all at once, so a crash can't leave half a file
+        report.append(f"{path.name}: {'updated' if old else 'created'}")
+    return "\n".join(report)
+
+
+@mcp.tool()
+def sync_to_files() -> str:
+    """Write this project's current memories into the managed section of AGENTS.md / CLAUDE.md, so they're
+    committed with the code: teammates and tools without memstore see them, and changes show up in reviews.
+    Call it when the user asks, or after a batch of new memories."""
+    try:
+        check_staleness()  # never write out a memory whose files have changed
+        return sync_files()
+    except redis.ConnectionError:
+        return store_down()
+
+
 @mcp.tool()
 def list_conflicts() -> str:
     """List pairs of memories in this project that may contradict each other and need a decision."""
@@ -337,4 +393,11 @@ def resolve_conflict(new_id: str, old_id: str, replaces_old: bool) -> str:
 
 
 if __name__ == "__main__":
-    mcp.run()  # talks to the AI tool over stdin/stdout
+    import sys
+    command = sys.argv[1] if len(sys.argv) > 1 else ""
+    if command == "sync":     # python server.py sync   -> update AGENTS.md / CLAUDE.md in this repo
+        print(sync_to_files())
+    elif command == "check":  # python server.py check  -> retire memories whose files changed
+        print(check_stale())
+    else:
+        mcp.run()  # talks to the AI tool over stdin/stdout
