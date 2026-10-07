@@ -121,8 +121,10 @@ public class Main {
   private static final Map<String, Memory> memories = new ConcurrentHashMap<>(); // id -> memory
   private static final Set<String> MEMORY_STATUSES = Set.of("active", "stale", "superseded");
   // How similar a new memory must be to an existing active one to count as a duplicate or a possible
-  // conflict. Starting guesses; to be tuned with real embeddings.
-  private static final double DUPLICATE_SIMILARITY = 0.95;
+  // conflict. Calibrated on MiniLM: real duplicates scored 0.73-0.92 but a contradiction ("timeout is 30s"
+  // vs "60s") scored 0.94, so only near-identical text is merged automatically. Everything else is
+  // shown to the AI tool, which judges whether it replaces an older memory.
+  private static final double DUPLICATE_SIMILARITY = 0.97;
   private static final double CONFLICT_SIMILARITY = 0.80;
   private static final AtomicLong nextMemoryNumber = new AtomicLong(1);          // for ids like m1, m2, ...
 
