@@ -100,6 +100,8 @@ public class Main {
     volatile String status = "active"; // "active", "stale" or "superseded"
     // Everything that has happened to this memory, oldest first: {time in ms, event, details}
     final List<String[]> history = Collections.synchronizedList(new ArrayList<>());
+    // Older memories this one might contradict, waiting for review: other id -> similarity
+    final Map<String, Double> pendingConflicts = new ConcurrentHashMap<>();
 
     Memory(String id, String project, String text, String source, String session, List<String> files,
            long createdAt) {
@@ -118,6 +120,10 @@ public class Main {
 
   private static final Map<String, Memory> memories = new ConcurrentHashMap<>(); // id -> memory
   private static final Set<String> MEMORY_STATUSES = Set.of("active", "stale", "superseded");
+  // How similar a new memory must be to an existing active one to count as a duplicate or a possible
+  // conflict. Starting guesses; to be tuned with real embeddings.
+  private static final double DUPLICATE_SIMILARITY = 0.95;
+  private static final double CONFLICT_SIMILARITY = 0.80;
   private static final AtomicLong nextMemoryNumber = new AtomicLong(1);          // for ids like m1, m2, ...
 
   // Each project's vectors live in their own VectorSet, so searches never mix projects
@@ -855,6 +861,9 @@ public class Main {
       case "MEM.SEARCH": return handleMemSearch(command);
       case "MEM.STATUS": return handleMemStatus(command);
       case "MEM.WHY":    return handleMemWhy(command);
+      case "MEM.SEEN":   return handleMemSeen(command);
+      case "MEM.CONFLICTS": return handleMemConflicts(command);
+      case "MEM.RESOLVE":   return handleMemResolve(command);
       case "VADD":   return handleVadd(command);
       case "VSEARCH": return handleVsearch(command);
       case "ZADD":   return handleZadd(command);
@@ -1138,7 +1147,7 @@ public class Main {
     return x;
   }
 
-  // MEM.ADD <project> <text> [SOURCE <tool>] [SESSION <id>] [FILES <a,b,...>] [ID <id> CREATED <ms>] VECTOR <x1> ... <xn>
+  // MEM.ADD <project> <text> [SOURCE <tool>] [SESSION <id>] [FILES <a,b,...>] [CONFLICTS <id:sim,...>] [ID <id> CREATED <ms>] VECTOR <x1> ... <xn>
   // Saves a memory and returns its id. ID/CREATED are only given when replaying the AOF, so a memory
   // keeps the same id and timestamp across restarts.
   private static String handleMemAdd(List<String> command) {
@@ -1150,6 +1159,7 @@ public class Main {
     List<String> files = new ArrayList<>();
     String id = null;
     long createdAt = -1;
+    Map<String, Double> conflicts = new HashMap<>(); // only given on replay: "m2:0.87,m5:0.81"
 
     int pos = 3;
     while (pos < command.size() && !command.get(pos).equalsIgnoreCase("VECTOR")) {
@@ -1161,6 +1171,12 @@ public class Main {
       else if (opt.equals("FILES")) { for (String f : val.split(",")) if (!f.isBlank()) files.add(f.trim()); }
       else if (opt.equals("ID")) id = val;
       else if (opt.equals("CREATED")) createdAt = Long.parseLong(val);
+      else if (opt.equals("CONFLICTS")) {
+        for (String c : val.split(",")) {
+          String[] kv = c.split(":");
+          if (kv.length == 2) conflicts.put(kv[0], Double.parseDouble(kv[1]));
+        }
+      }
       else return "-ERR unknown MEM.ADD option '" + command.get(pos) + "'\r\n";
       pos += 2;
     }
@@ -1173,24 +1189,160 @@ public class Main {
       return "-ERR vector has " + vector.length + " dimensions, but project '" + project + "' uses " + set.dim + "\r\n";
     }
 
-    // New memory: the server picks the id and time. Replay: reuse the logged ones.
-    if (id == null) id = "m" + nextMemoryNumber.getAndIncrement();
-    else bumpMemoryCounterPast(id);
-    if (createdAt == -1) createdAt = System.currentTimeMillis();
+    boolean replaying = (id != null); // the AOF already recorded what happened, so don't re-decide it
+    String outcome = "created";
+    String related = "";
 
-    set.add(id, vector);
-    memories.put(id, new Memory(id, project, text, source, session, files, createdAt));
+    synchronized (set) { // so two clients adding the same fact at once can't both slip through
+      if (!replaying && set.size() > 0) {
+        // Compare with the most similar active memory in this project
+        List<Map.Entry<Memory, Double>> nearest = filteredSearch(set, vector, 1, 100, "active");
+        if (!nearest.isEmpty()) {
+          Memory other = nearest.get(0).getKey();
+          double sim = nearest.get(0).getValue();
+          if (sim >= DUPLICATE_SIMILARITY) {
+            // Duplicate: don't store it again, just note that it came up again
+            List<String> seen = new ArrayList<>(List.of("MEM.SEEN", other.id, "SOURCE", source));
+            if (!session.isEmpty()) { seen.add("SESSION"); seen.add(session); }
+            seen.add("TEXT");
+            seen.add(text);
+            String reply = handleMemSeen(seen);
+            if (reply.startsWith("-")) return reply;
+            return memAddReply(other.id, "duplicate", other.id);
+          }
+          if (sim >= CONFLICT_SIMILARITY) {
+            outcome = "possible_conflict";
+            related = other.id;
+            conflicts.put(other.id, sim);
+          }
+        }
+      }
 
-    // Log the full version (with the id and time we picked) so a replay recreates this exact memory
+      // New memory: the server picks the id and time. Replay: reuse the logged ones.
+      if (id == null) id = "m" + nextMemoryNumber.getAndIncrement();
+      else bumpMemoryCounterPast(id);
+      if (createdAt == -1) createdAt = System.currentTimeMillis();
+
+      set.add(id, vector);
+      Memory m = new Memory(id, project, text, source, session, files, createdAt);
+      for (Map.Entry<String, Double> c : conflicts.entrySet()) {
+        m.pendingConflicts.put(c.getKey(), c.getValue());
+        m.history.add(new String[] {String.valueOf(createdAt), "possible conflict",
+            String.format(Locale.US, "with %s (similarity %.3f), waiting for review", c.getKey(), c.getValue())});
+      }
+      memories.put(id, m);
+    }
+
+    // Log the full version (with the id, time and conflicts we decided) so a replay recreates it exactly
     List<String> logged = new ArrayList<>(List.of("MEM.ADD", project, text, "SOURCE", source));
     if (!session.isEmpty()) { logged.add("SESSION"); logged.add(session); }
     if (!files.isEmpty()) { logged.add("FILES"); logged.add(String.join(",", files)); }
+    if (!conflicts.isEmpty()) {
+      List<String> parts = new ArrayList<>();
+      for (Map.Entry<String, Double> c : conflicts.entrySet()) {
+        parts.add(c.getKey() + ":" + String.format(Locale.US, "%.6f", c.getValue()));
+      }
+      logged.add("CONFLICTS");
+      logged.add(String.join(",", parts));
+    }
     logged.addAll(List.of("ID", id, "CREATED", String.valueOf(createdAt), "VECTOR"));
     logged.addAll(command.subList(pos + 1, command.size()));
     propagate(logged);
     appendToAof(logged);
 
-    return bulkString(id);
+    return memAddReply(id, outcome, related);
+  }
+
+  // MEM.ADD's reply: [id, outcome, related id]. outcome is "created", "duplicate" or "possible_conflict".
+  private static String memAddReply(String id, String outcome, String related) {
+    return "*3\r\n" + bulkString(id) + bulkString(outcome) + bulkString(related);
+  }
+
+  // MEM.SEEN <id> SOURCE <tool> [SESSION <id>] [TEXT <text>] [AT <ms>]: records that a duplicate of this
+  // memory was saved again (instead of storing a second copy). Used by MEM.ADD and by AOF replay.
+  private static String handleMemSeen(List<String> command) {
+    if (command.size() < 2) return "-ERR usage: MEM.SEEN <id> SOURCE <tool>\r\n";
+    Memory m = memories.get(command.get(1));
+    if (m == null) return "-ERR no memory with id '" + command.get(1) + "'\r\n";
+    String source = "unknown", session = "", text = "";
+    long at = -1;
+    for (int pos = 2; pos + 1 < command.size(); pos += 2) {
+      String opt = command.get(pos).toUpperCase();
+      String val = command.get(pos + 1);
+      if (opt.equals("SOURCE")) source = val;
+      else if (opt.equals("SESSION")) session = val;
+      else if (opt.equals("TEXT")) text = val;
+      else if (opt.equals("AT")) at = Long.parseLong(val);
+      else return "-ERR unknown MEM.SEEN option '" + command.get(pos) + "'\r\n";
+    }
+    if (at == -1) at = System.currentTimeMillis();
+    String details = "by " + source + (session.isEmpty() ? "" : " (session " + session + ")")
+        + (text.isEmpty() || text.equals(m.text) ? "" : " as \"" + text + "\"");
+    m.history.add(new String[] {String.valueOf(at), "seen again", details});
+
+    List<String> logged = new ArrayList<>(List.of("MEM.SEEN", m.id, "SOURCE", source));
+    if (!session.isEmpty()) { logged.add("SESSION"); logged.add(session); }
+    if (!text.isEmpty()) { logged.add("TEXT"); logged.add(text); }
+    logged.add("AT");
+    logged.add(String.valueOf(at));
+    propagate(logged);
+    appendToAof(logged);
+    return "+OK\r\n";
+  }
+
+  // MEM.CONFLICTS <project>: memories waiting for review, as [new id, new text, old id, old text, similarity]
+  private static String handleMemConflicts(List<String> command) {
+    if (command.size() != 2) return "-ERR usage: MEM.CONFLICTS <project>\r\n";
+    String project = command.get(1);
+    List<String> rows = new ArrayList<>();
+    List<Memory> sorted = new ArrayList<>(memories.values());
+    sorted.sort((a, b) -> Long.compare(a.createdAt, b.createdAt));
+    for (Memory m : sorted) {
+      if (!m.project.equals(project)) continue;
+      for (Map.Entry<String, Double> c : m.pendingConflicts.entrySet()) {
+        Memory old = memories.get(c.getKey());
+        if (old == null) continue;
+        rows.add("*5\r\n" + bulkString(m.id) + bulkString(m.text) + bulkString(old.id) + bulkString(old.text)
+            + bulkString(String.format(Locale.US, "%.3f", c.getValue())));
+      }
+    }
+    return "*" + rows.size() + "\r\n" + String.join("", rows);
+  }
+
+  // MEM.RESOLVE <new id> <old id> <SUPERSEDE|KEEP> [AT <ms>]
+  //   SUPERSEDE: the new memory replaces the old one (old becomes "superseded")
+  //   KEEP: not actually a contradiction, keep both
+  private static String handleMemResolve(List<String> command) {
+    if (command.size() != 4 && command.size() != 6) {
+      return "-ERR usage: MEM.RESOLVE <new id> <old id> <SUPERSEDE|KEEP>\r\n";
+    }
+    Memory newer = memories.get(command.get(1));
+    Memory older = memories.get(command.get(2));
+    if (newer == null || older == null || !newer.pendingConflicts.containsKey(older.id)) {
+      return "-ERR no pending conflict between '" + command.get(1) + "' and '" + command.get(2) + "'\r\n";
+    }
+    String decision = command.get(3).toUpperCase();
+    if (!decision.equals("SUPERSEDE") && !decision.equals("KEEP")) {
+      return "-ERR decision must be SUPERSEDE or KEEP\r\n";
+    }
+    long at = (command.size() == 6 && command.get(4).equalsIgnoreCase("AT"))
+        ? Long.parseLong(command.get(5)) : System.currentTimeMillis();
+
+    newer.pendingConflicts.remove(older.id);
+    if (decision.equals("SUPERSEDE")) {
+      String oldStatus = older.status;
+      older.status = "superseded";
+      older.history.add(new String[] {String.valueOf(at), oldStatus + " -> superseded",
+          "replaced by " + newer.id + ": \"" + newer.text + "\""});
+      newer.history.add(new String[] {String.valueOf(at), "resolved", "supersedes " + older.id});
+    } else {
+      newer.history.add(new String[] {String.valueOf(at), "resolved", "kept alongside " + older.id + " (no conflict)"});
+    }
+
+    List<String> logged = List.of("MEM.RESOLVE", newer.id, older.id, decision, "AT", String.valueOf(at));
+    propagate(logged);
+    appendToAof(logged);
+    return "+OK\r\n";
   }
 
   // After replaying memory "m7", new memories must start at m8 or later
