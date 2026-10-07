@@ -15,6 +15,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.HashMap;
 import java.util.Base64;
 import java.util.Set;
@@ -83,6 +84,36 @@ public class Main {
   // Connection to the master, kept open for the rest of the handshake in later stages
   private static Socket masterSocket = null;
   private static long replicaOffset = 0;
+
+  // ---------- Memories (the product layer) ----------
+
+  // One memory: a fact an AI tool saved, plus where it came from and its current state
+  static class Memory {
+    final String id;
+    final String project;
+    final String text;
+    final String source;       // which tool saved it, e.g. "claude-code"
+    final List<String> files;  // files this memory is about (used for staleness later)
+    final long createdAt;      // unix time in ms
+    volatile String status = "active"; // later also "stale" or "superseded"
+
+    Memory(String id, String project, String text, String source, List<String> files, long createdAt) {
+      this.id = id;
+      this.project = project;
+      this.text = text;
+      this.source = source;
+      this.files = files;
+      this.createdAt = createdAt;
+    }
+  }
+
+  private static final Map<String, Memory> memories = new ConcurrentHashMap<>(); // id -> memory
+  private static final AtomicLong nextMemoryNumber = new AtomicLong(1);          // for ids like m1, m2, ...
+
+  // Each project's vectors live in their own VectorSet, so searches never mix projects
+  private static VectorSet projectVectors(String project, int dim) {
+    return vectorSets.computeIfAbsent("mem:" + project, k -> new VectorSet(dim));
+  }
 
   // Vector sets, one per key (for VADD / VSEARCH)
   private static final Map<String, VectorSet> vectorSets = new ConcurrentHashMap<>();
@@ -804,6 +835,9 @@ public class Main {
       case "GEOPOS": return handleGeopos(command);
       case "GEODIST": return handleGeodist(command);
       case "GEOSEARCH": return handleGeosearch(command);
+      case "MEM.ADD":    return handleMemAdd(command);
+      case "MEM.GET":    return handleMemGet(command.get(1));
+      case "MEM.SEARCH": return handleMemSearch(command);
       case "VADD":   return handleVadd(command);
       case "VSEARCH": return handleVsearch(command);
       case "ZADD":   return handleZadd(command);
@@ -1085,6 +1119,118 @@ public class Main {
     x = (x | (x << 2)) & 0x3333333333333333L;
     x = (x | (x << 1)) & 0x5555555555555555L;
     return x;
+  }
+
+  // MEM.ADD <project> <text> [SOURCE <tool>] [FILES <a,b,...>] [ID <id> CREATED <ms>] VECTOR <x1> ... <xn>
+  // Saves a memory and returns its id. ID/CREATED are only given when replaying the AOF, so a memory
+  // keeps the same id and timestamp across restarts.
+  private static String handleMemAdd(List<String> command) {
+    if (command.size() < 3) return "-ERR wrong number of arguments for MEM.ADD\r\n";
+    String project = command.get(1);
+    String text = command.get(2);
+    String source = "unknown";
+    List<String> files = new ArrayList<>();
+    String id = null;
+    long createdAt = -1;
+
+    int pos = 3;
+    while (pos < command.size() && !command.get(pos).equalsIgnoreCase("VECTOR")) {
+      if (pos + 1 >= command.size()) return "-ERR MEM.ADD option '" + command.get(pos) + "' needs a value\r\n";
+      String opt = command.get(pos).toUpperCase();
+      String val = command.get(pos + 1);
+      if (opt.equals("SOURCE")) source = val;
+      else if (opt.equals("FILES")) { for (String f : val.split(",")) if (!f.isBlank()) files.add(f.trim()); }
+      else if (opt.equals("ID")) id = val;
+      else if (opt.equals("CREATED")) createdAt = Long.parseLong(val);
+      else return "-ERR unknown MEM.ADD option '" + command.get(pos) + "'\r\n";
+      pos += 2;
+    }
+    if (pos >= command.size()) return "-ERR MEM.ADD needs VECTOR followed by the embedding\r\n";
+    float[] vector = parseVector(command, pos + 1);
+    if (vector == null || vector.length == 0) return "-ERR vector values must be numbers\r\n";
+
+    VectorSet set = projectVectors(project, vector.length);
+    if (vector.length != set.dim) {
+      return "-ERR vector has " + vector.length + " dimensions, but project '" + project + "' uses " + set.dim + "\r\n";
+    }
+
+    // New memory: the server picks the id and time. Replay: reuse the logged ones.
+    if (id == null) id = "m" + nextMemoryNumber.getAndIncrement();
+    else bumpMemoryCounterPast(id);
+    if (createdAt == -1) createdAt = System.currentTimeMillis();
+
+    set.add(id, vector);
+    memories.put(id, new Memory(id, project, text, source, files, createdAt));
+
+    // Log the full version (with the id and time we picked) so a replay recreates this exact memory
+    List<String> logged = new ArrayList<>(List.of("MEM.ADD", project, text, "SOURCE", source));
+    if (!files.isEmpty()) { logged.add("FILES"); logged.add(String.join(",", files)); }
+    logged.addAll(List.of("ID", id, "CREATED", String.valueOf(createdAt), "VECTOR"));
+    logged.addAll(command.subList(pos + 1, command.size()));
+    propagate(logged);
+    appendToAof(logged);
+
+    return bulkString(id);
+  }
+
+  // After replaying memory "m7", new memories must start at m8 or later
+  private static void bumpMemoryCounterPast(String id) {
+    if (!id.startsWith("m")) return;
+    try {
+      long n = Long.parseLong(id.substring(1));
+      nextMemoryNumber.accumulateAndGet(n + 1, Math::max);
+    } catch (NumberFormatException ignored) {
+      // custom id, nothing to bump
+    }
+  }
+
+  // MEM.GET <id>: the memory's fields as [field, value, field, value, ...]
+  private static String handleMemGet(String id) {
+    Memory m = memories.get(id);
+    if (m == null) return "*-1\r\n";
+    String[][] fields = {
+        {"id", m.id}, {"project", m.project}, {"text", m.text}, {"source", m.source},
+        {"files", String.join(",", m.files)}, {"status", m.status}, {"created_at", String.valueOf(m.createdAt)}
+    };
+    StringBuilder sb = new StringBuilder("*" + fields.length * 2 + "\r\n");
+    for (String[] f : fields) sb.append(bulkString(f[0])).append(bulkString(f[1]));
+    return sb.toString();
+  }
+
+  // MEM.SEARCH <project> <k> [EF <n>] VECTOR <x1> ... <xn>: the k most similar memories in that project,
+  // each as [id, score, text]
+  private static String handleMemSearch(List<String> command) {
+    String project = command.get(1);
+    int k = Integer.parseInt(command.get(2));
+    int ef = 100;
+    int pos = 3;
+    while (pos < command.size() && !command.get(pos).equalsIgnoreCase("VECTOR")) {
+      if (command.get(pos).equalsIgnoreCase("EF") && pos + 1 < command.size()) {
+        ef = Integer.parseInt(command.get(pos + 1));
+        pos += 2;
+      } else {
+        return "-ERR unknown MEM.SEARCH option '" + command.get(pos) + "'\r\n";
+      }
+    }
+    if (pos >= command.size()) return "-ERR MEM.SEARCH needs VECTOR followed by the embedding\r\n";
+    float[] query = parseVector(command, pos + 1);
+    if (query == null) return "-ERR vector values must be numbers\r\n";
+
+    VectorSet set = vectorSets.get("mem:" + project);
+    if (set == null) return "*0\r\n";
+    if (query.length != set.dim) {
+      return "-ERR query has " + query.length + " dimensions, but project '" + project + "' uses " + set.dim + "\r\n";
+    }
+
+    List<Map.Entry<String, Double>> hits = set.search(query, k, ef);
+    StringBuilder sb = new StringBuilder("*" + hits.size() + "\r\n");
+    for (Map.Entry<String, Double> h : hits) {
+      Memory m = memories.get(h.getKey());
+      sb.append("*3\r\n").append(bulkString(m.id))
+        .append(bulkString(String.format(Locale.US, "%.6f", h.getValue())))
+        .append(bulkString(m.text));
+    }
+    return sb.toString();
   }
 
   // VADD <key> <id> <x1> <x2> ... <xn>: stores a vector. Returns 1 if the id is new, 0 if replaced.
