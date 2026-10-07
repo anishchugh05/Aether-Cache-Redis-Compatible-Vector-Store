@@ -16,6 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Base64;
 import java.util.Set;
@@ -93,17 +94,25 @@ public class Main {
     final String project;
     final String text;
     final String source;       // which tool saved it, e.g. "claude-code"
+    final String session;      // which session of that tool, if known
     final List<String> files;  // files this memory is about (used for staleness later)
     final long createdAt;      // unix time in ms
-    volatile String status = "active"; // later also "stale" or "superseded"
+    volatile String status = "active"; // "active", "stale" or "superseded"
+    // Everything that has happened to this memory, oldest first: {time in ms, event, details}
+    final List<String[]> history = Collections.synchronizedList(new ArrayList<>());
 
-    Memory(String id, String project, String text, String source, List<String> files, long createdAt) {
+    Memory(String id, String project, String text, String source, String session, List<String> files,
+           long createdAt) {
       this.id = id;
       this.project = project;
       this.text = text;
       this.source = source;
+      this.session = session;
       this.files = files;
       this.createdAt = createdAt;
+      String details = "by " + source + (session.isEmpty() ? "" : " (session " + session + ")")
+          + (files.isEmpty() ? "" : ", linked to " + String.join(", ", files));
+      history.add(new String[] {String.valueOf(createdAt), "created", details});
     }
   }
 
@@ -845,6 +854,7 @@ public class Main {
       case "MEM.GET":    return handleMemGet(command.get(1));
       case "MEM.SEARCH": return handleMemSearch(command);
       case "MEM.STATUS": return handleMemStatus(command);
+      case "MEM.WHY":    return handleMemWhy(command);
       case "VADD":   return handleVadd(command);
       case "VSEARCH": return handleVsearch(command);
       case "ZADD":   return handleZadd(command);
@@ -1128,7 +1138,7 @@ public class Main {
     return x;
   }
 
-  // MEM.ADD <project> <text> [SOURCE <tool>] [FILES <a,b,...>] [ID <id> CREATED <ms>] VECTOR <x1> ... <xn>
+  // MEM.ADD <project> <text> [SOURCE <tool>] [SESSION <id>] [FILES <a,b,...>] [ID <id> CREATED <ms>] VECTOR <x1> ... <xn>
   // Saves a memory and returns its id. ID/CREATED are only given when replaying the AOF, so a memory
   // keeps the same id and timestamp across restarts.
   private static String handleMemAdd(List<String> command) {
@@ -1136,6 +1146,7 @@ public class Main {
     String project = command.get(1);
     String text = command.get(2);
     String source = "unknown";
+    String session = "";
     List<String> files = new ArrayList<>();
     String id = null;
     long createdAt = -1;
@@ -1146,6 +1157,7 @@ public class Main {
       String opt = command.get(pos).toUpperCase();
       String val = command.get(pos + 1);
       if (opt.equals("SOURCE")) source = val;
+      else if (opt.equals("SESSION")) session = val;
       else if (opt.equals("FILES")) { for (String f : val.split(",")) if (!f.isBlank()) files.add(f.trim()); }
       else if (opt.equals("ID")) id = val;
       else if (opt.equals("CREATED")) createdAt = Long.parseLong(val);
@@ -1167,10 +1179,11 @@ public class Main {
     if (createdAt == -1) createdAt = System.currentTimeMillis();
 
     set.add(id, vector);
-    memories.put(id, new Memory(id, project, text, source, files, createdAt));
+    memories.put(id, new Memory(id, project, text, source, session, files, createdAt));
 
     // Log the full version (with the id and time we picked) so a replay recreates this exact memory
     List<String> logged = new ArrayList<>(List.of("MEM.ADD", project, text, "SOURCE", source));
+    if (!session.isEmpty()) { logged.add("SESSION"); logged.add(session); }
     if (!files.isEmpty()) { logged.add("FILES"); logged.add(String.join(",", files)); }
     logged.addAll(List.of("ID", id, "CREATED", String.valueOf(createdAt), "VECTOR"));
     logged.addAll(command.subList(pos + 1, command.size()));
@@ -1197,27 +1210,72 @@ public class Main {
     if (m == null) return "*-1\r\n";
     String[][] fields = {
         {"id", m.id}, {"project", m.project}, {"text", m.text}, {"source", m.source},
-        {"files", String.join(",", m.files)}, {"status", m.status}, {"created_at", String.valueOf(m.createdAt)}
+        {"session", m.session}, {"files", String.join(",", m.files)}, {"status", m.status},
+        {"created_at", String.valueOf(m.createdAt)}
     };
     StringBuilder sb = new StringBuilder("*" + fields.length * 2 + "\r\n");
     for (String[] f : fields) sb.append(bulkString(f[0])).append(bulkString(f[1]));
     return sb.toString();
   }
 
-  // MEM.STATUS <id> <active|stale|superseded>: changes a memory's status (logged, so it survives restarts)
+  // MEM.STATUS <id> <active|stale|superseded> [REASON <text>] [AT <ms>]
+  // Changes a memory's status and records why in its history. AT is only given when replaying the AOF,
+  // so the change keeps its original time across restarts.
   private static String handleMemStatus(List<String> command) {
-    if (command.size() != 3) return "-ERR usage: MEM.STATUS <id> <active|stale|superseded>\r\n";
+    String usage = "-ERR usage: MEM.STATUS <id> <active|stale|superseded> [REASON <text>]\r\n";
+    if (command.size() < 3) return usage;
     Memory m = memories.get(command.get(1));
     if (m == null) return "-ERR no memory with id '" + command.get(1) + "'\r\n";
     String status = command.get(2).toLowerCase();
     if (!MEMORY_STATUSES.contains(status)) {
       return "-ERR status must be one of: active, stale, superseded\r\n";
     }
+    String reason = "";
+    long at = -1;
+    for (int pos = 3; pos < command.size(); pos += 2) {
+      if (pos + 1 >= command.size()) return usage;
+      String opt = command.get(pos).toUpperCase();
+      if (opt.equals("REASON")) reason = command.get(pos + 1);
+      else if (opt.equals("AT")) at = Long.parseLong(command.get(pos + 1));
+      else return "-ERR unknown MEM.STATUS option '" + command.get(pos) + "'\r\n";
+    }
+    if (at == -1) at = System.currentTimeMillis();
+
+    String old = m.status;
+    if (old.equals(status)) return "+OK\r\n"; // nothing changed, nothing to record
     m.status = status;
-    List<String> logged = List.of("MEM.STATUS", m.id, status);
+    m.history.add(new String[] {String.valueOf(at), old + " -> " + status, reason});
+
+    List<String> logged = new ArrayList<>(List.of("MEM.STATUS", m.id, status));
+    if (!reason.isEmpty()) { logged.add("REASON"); logged.add(reason); }
+    logged.add("AT");
+    logged.add(String.valueOf(at));
     propagate(logged);
     appendToAof(logged);
     return "+OK\r\n";
+  }
+
+  // MEM.WHY <id>: where a memory came from and everything that has happened to it.
+  // Returns [field, value, ...] ending with "history", whose value is a list of [time, event, details].
+  private static String handleMemWhy(List<String> command) {
+    if (command.size() != 2) return "-ERR usage: MEM.WHY <id>\r\n";
+    Memory m = memories.get(command.get(1));
+    if (m == null) return "*-1\r\n";
+    String[][] fields = {
+        {"id", m.id}, {"text", m.text}, {"project", m.project}, {"status", m.status},
+        {"source", m.source}, {"session", m.session}, {"files", String.join(",", m.files)},
+        {"created_at", String.valueOf(m.createdAt)}
+    };
+    StringBuilder sb = new StringBuilder("*" + (fields.length * 2 + 2) + "\r\n");
+    for (String[] f : fields) sb.append(bulkString(f[0])).append(bulkString(f[1]));
+    sb.append(bulkString("history"));
+    synchronized (m.history) {
+      sb.append("*").append(m.history.size()).append("\r\n");
+      for (String[] e : m.history) {
+        sb.append("*3\r\n").append(bulkString(e[0])).append(bulkString(e[1])).append(bulkString(e[2]));
+      }
+    }
+    return sb.toString();
   }
 
   // MEM.SEARCH <project> <k> [EF <n>] [STATUS <active|stale|superseded|any>] VECTOR <x1> ... <xn>
