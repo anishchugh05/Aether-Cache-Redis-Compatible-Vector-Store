@@ -108,6 +108,7 @@ public class Main {
   }
 
   private static final Map<String, Memory> memories = new ConcurrentHashMap<>(); // id -> memory
+  private static final Set<String> MEMORY_STATUSES = Set.of("active", "stale", "superseded");
   private static final AtomicLong nextMemoryNumber = new AtomicLong(1);          // for ids like m1, m2, ...
 
   // Each project's vectors live in their own VectorSet, so searches never mix projects
@@ -316,6 +317,11 @@ public class Main {
     }
 
     // Exact search: compare the query against every vector, keep the k most similar
+    // Number of vectors in this set
+    synchronized int size() {
+      return ids.size();
+    }
+
     synchronized List<Map.Entry<String, Double>> searchExact(float[] query, int k) {
       float[] q = normalize(query);
       // Min-heap of size k: the weakest of the current top-k sits on top, ready to be replaced
@@ -838,6 +844,7 @@ public class Main {
       case "MEM.ADD":    return handleMemAdd(command);
       case "MEM.GET":    return handleMemGet(command.get(1));
       case "MEM.SEARCH": return handleMemSearch(command);
+      case "MEM.STATUS": return handleMemStatus(command);
       case "VADD":   return handleVadd(command);
       case "VSEARCH": return handleVsearch(command);
       case "ZADD":   return handleZadd(command);
@@ -1197,20 +1204,44 @@ public class Main {
     return sb.toString();
   }
 
-  // MEM.SEARCH <project> <k> [EF <n>] VECTOR <x1> ... <xn>: the k most similar memories in that project,
-  // each as [id, score, text]
+  // MEM.STATUS <id> <active|stale|superseded>: changes a memory's status (logged, so it survives restarts)
+  private static String handleMemStatus(List<String> command) {
+    if (command.size() != 3) return "-ERR usage: MEM.STATUS <id> <active|stale|superseded>\r\n";
+    Memory m = memories.get(command.get(1));
+    if (m == null) return "-ERR no memory with id '" + command.get(1) + "'\r\n";
+    String status = command.get(2).toLowerCase();
+    if (!MEMORY_STATUSES.contains(status)) {
+      return "-ERR status must be one of: active, stale, superseded\r\n";
+    }
+    m.status = status;
+    List<String> logged = List.of("MEM.STATUS", m.id, status);
+    propagate(logged);
+    appendToAof(logged);
+    return "+OK\r\n";
+  }
+
+  // MEM.SEARCH <project> <k> [EF <n>] [STATUS <active|stale|superseded|any>] VECTOR <x1> ... <xn>
+  // The k most similar memories in that project with that status (default: active), each as [id, score, text]
   private static String handleMemSearch(List<String> command) {
     String project = command.get(1);
     int k = Integer.parseInt(command.get(2));
     int ef = 100;
+    String wanted = "active";
     int pos = 3;
     while (pos < command.size() && !command.get(pos).equalsIgnoreCase("VECTOR")) {
-      if (command.get(pos).equalsIgnoreCase("EF") && pos + 1 < command.size()) {
+      String opt = command.get(pos).toUpperCase();
+      if (pos + 1 >= command.size()) return "-ERR MEM.SEARCH option '" + command.get(pos) + "' needs a value\r\n";
+      if (opt.equals("EF")) {
         ef = Integer.parseInt(command.get(pos + 1));
-        pos += 2;
+      } else if (opt.equals("STATUS")) {
+        wanted = command.get(pos + 1).toLowerCase();
+        if (!wanted.equals("any") && !MEMORY_STATUSES.contains(wanted)) {
+          return "-ERR STATUS must be one of: active, stale, superseded, any\r\n";
+        }
       } else {
         return "-ERR unknown MEM.SEARCH option '" + command.get(pos) + "'\r\n";
       }
+      pos += 2;
     }
     if (pos >= command.size()) return "-ERR MEM.SEARCH needs VECTOR followed by the embedding\r\n";
     float[] query = parseVector(command, pos + 1);
@@ -1222,15 +1253,48 @@ public class Main {
       return "-ERR query has " + query.length + " dimensions, but project '" + project + "' uses " + set.dim + "\r\n";
     }
 
-    List<Map.Entry<String, Double>> hits = set.search(query, k, ef);
-    StringBuilder sb = new StringBuilder("*" + hits.size() + "\r\n");
-    for (Map.Entry<String, Double> h : hits) {
-      Memory m = memories.get(h.getKey());
+    List<Map.Entry<Memory, Double>> results = filteredSearch(set, query, k, ef, wanted);
+    StringBuilder sb = new StringBuilder("*" + results.size() + "\r\n");
+    for (Map.Entry<Memory, Double> r : results) {
+      Memory m = r.getKey();
       sb.append("*3\r\n").append(bulkString(m.id))
-        .append(bulkString(String.format(Locale.US, "%.6f", h.getValue())))
+        .append(bulkString(String.format(Locale.US, "%.6f", r.getValue())))
         .append(bulkString(m.text));
     }
     return sb.toString();
+  }
+
+  // Post-filtering: HNSW doesn't know about status, so ask it for extra candidates, keep the ones whose
+  // status matches, and widen the search if too many got thrown out. If that still isn't enough,
+  // fall back to an exact scan, so the answer is always correct even when most memories are filtered out.
+  // Returns up to k (memory, similarity) pairs, most similar first.
+  private static List<Map.Entry<Memory, Double>> filteredSearch(VectorSet set, float[] query, int k, int ef,
+                                                               String wanted) {
+    int total = set.size();
+    int fetch = Math.min(total, k * 4);
+    while (true) {
+      List<Map.Entry<Memory, Double>> kept = keepMatching(set.search(query, fetch, Math.max(ef, fetch)), k, wanted);
+      if (kept.size() == k || fetch >= total) {
+        if (kept.size() == k) return kept;
+        break; // asked HNSW for everything and still short
+      }
+      fetch = Math.min(total, fetch * 2);
+    }
+    return keepMatching(set.searchExact(query, total), k, wanted); // exact scan: guaranteed complete
+  }
+
+  // From search hits (best first), keeps the first k whose memory has the wanted status
+  private static List<Map.Entry<Memory, Double>> keepMatching(List<Map.Entry<String, Double>> hits, int k,
+                                                              String wanted) {
+    List<Map.Entry<Memory, Double>> kept = new ArrayList<>();
+    for (Map.Entry<String, Double> hit : hits) {
+      Memory m = memories.get(hit.getKey());
+      if (m != null && (wanted.equals("any") || m.status.equals(wanted))) {
+        kept.add(Map.entry(m, hit.getValue()));
+        if (kept.size() == k) break;
+      }
+    }
+    return kept;
   }
 
   // VADD <key> <id> <x1> <x2> ... <xn>: stores a vector. Returns 1 if the id is new, 0 if replaced.
