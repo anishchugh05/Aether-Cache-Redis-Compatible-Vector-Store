@@ -1,11 +1,11 @@
 [![progress-banner](https://backend.codecrafters.io/progress/redis/f43a7cd3-11e6-45dc-a8ba-9d6690c73ac0)](https://app.codecrafters.io/users/anishchugh05?r=2qF)
 
-# memstore
+# Aether Cache
 
 **Shared memory for AI coding tools that stays true to your code.**
 
 Claude Code, Cursor, and other AI tools each forget your project between sessions, and when they do remember things,
-nothing checks whether those memories are still correct. memstore gives every tool one shared, local memory, and keeps
+nothing checks whether those memories are still correct. Aether Cache gives every tool one shared, local memory, and keeps
 it honest:
 
 - **Memories go stale when the code changes.** Each memory is linked to the files it's about, with a snapshot of their
@@ -16,17 +16,32 @@ it honest:
 - **Every memory can explain itself.** Which tool and session saved it, which file versions it was based on, and every
   change since: created, seen again, went stale, confirmed, replaced.
 - **It works with the files you already use.** Current memories sync into a managed section of `AGENTS.md` and
-  `CLAUDE.md`, so they're committed, reviewed in PRs, and visible to teammates who don't run memstore.
+  `CLAUDE.md`, so they're committed, reviewed in PRs, and visible to teammates who don't run Aether Cache.
 
-It runs entirely on your machine. Underneath is a Redis-compatible database engine I wrote from scratch in Java, with
-its own HNSW vector index and crash-safe persistence.
+It runs entirely on your machine, on top of a database engine I wrote from scratch.
+
+## Not a Redis clone
+
+Aether Cache started as a from-scratch rebuild of Redis in Java, then kept going. Every layer here is written from
+scratch, and each one does something the layer beneath it can't:
+
+| Layer | What it adds |
+|---|---|
+| **MCP server** | Claude Code, Cursor, and any MCP tool share one memory |
+| **Git awareness** | Memories retire themselves when the code they describe changes |
+| **Memory layer** | Status, provenance, full history, duplicate merging, and conflict review, inside the engine |
+| **HNSW vector index** | Semantic search: 99.4% recall at 0.84 ms on 100K vectors, 22× faster than exact search |
+| **Redis-compatible engine** | RESP protocol, 50+ commands, replication, transactions, and crash-safe persistence (0 acknowledged writes lost across 1,039,890 writes and 8 `kill -9` crashes), at 88–93% of real Redis's throughput |
+
+The bottom layer alone is a working Redis: `redis-cli`, `redis-benchmark`, and `redis-py` talk to it unchanged. The
+memory layer, git awareness, and MCP server are things Redis doesn't do at all.
 
 ```
-Claude Code ─┐                        ┌────────────────────────────────────────────┐
-Cursor ──────┼─ MCP ─► memory_mcp ────┼─ RESP ─► Java engine (Main.java)           │
-other tools ─┘   (Python: embeddings, │          memories, HNSW vector index,      │
-                  git hashing, sync)  │          history, append-only file on disk │
-                                      └────────────────────────────────────────────┘
+Claude Code ─┐                       ┌─────────────────────────────────────────────┐
+Cursor ──────┼─ MCP ─► memory_mcp ───┼─ RESP ─► Java engine (Main.java)            │
+other tools ─┘   (Python: embeddings,│          memories, HNSW vector index,       │
+                  git hashing, sync) │          history, append-only file on disk  │
+                                     └─────────────────────────────────────────────┘
 ```
 
 ## What it looks like
@@ -78,18 +93,18 @@ Requires Java 11+ and Python 3.10+.
 
 ```sh
 # 1. Python environment for the MCP server
-micromamba create -n memstore python=3.11 -y && micromamba activate memstore
+micromamba create -n aether-cache python=3.11 -y && micromamba activate aether-cache
 pip install -r memory_mcp/requirements.txt
 
-# 2. Start the engine, with memories saved to ~/.memstore (terminal 1)
-java src/main/java/Main.java --dir ~/.memstore --appendonly yes
+# 2. Start the engine, with memories saved to ~/.aether-cache (terminal 1)
+java src/main/java/Main.java --dir ~/.aether-cache --appendonly yes
 
 # 3. Connect it to Claude Code, for all projects (terminal 2)
-claude mcp add memstore --scope user -e MEMORY_SOURCE=claude-code -- \
+claude mcp add aether-cache --scope user -e MEMORY_SOURCE=claude-code -- \
   $(which python) "$(pwd)/memory_mcp/server.py"
 ```
 
-Start `claude` in any git repo and run `/mcp` to check that `memstore` is connected. Memories are kept per project
+Start `claude` in any git repo and run `/mcp` to check that `aether-cache` is connected. Memories are kept per project
 (the git repo's folder name), so projects never mix. Any other MCP-capable tool connects the same way; set
 `MEMORY_SOURCE` to its name so you can tell which tool saved what.
 
@@ -150,7 +165,7 @@ persistence hardening, and the memory layer are my own additions.
 
 `redis-benchmark -t set,get`, 100K requests, 50 parallel clients, 3-byte values, same machine:
 
-| | memstore engine | Redis 8.10.2 | engine as % of Redis |
+| | Aether Cache | Redis 8.10.2 | Aether Cache as % of Redis |
 |---|---|---|---|
 | SET | 205.8K ops/sec | 233.6K ops/sec | 88% |
 | GET | 225.7K ops/sec | 242.7K ops/sec | 93% |
@@ -259,7 +274,7 @@ python memory_mcp/calibrate.py                     # embedding similarity calibr
 
 ## Related work
 
-memstore is a learning project and an early product experiment. These are the production systems in the same space:
+Aether Cache is an early, open-source project. These are the production systems in the same space:
 
 - **Vector search in Redis-style stores:**
   - [Redis 8 vector sets](https://redis.io/docs/latest/develop/data-types/vector-sets/) and
@@ -269,13 +284,12 @@ memstore is a learning project and an early product experiment. These are the pr
 - **Memory for AI agents:** [Mem0](https://github.com/mem0ai/mem0), [Zep](https://www.getzep.com/),
   [Letta](https://github.com/letta-ai/letta), and the
   [MCP reference memory server](https://github.com/modelcontextprotocol/servers).
-- **Instruction files:** [AGENTS.md](https://agents.md/) and `CLAUDE.md`. memstore syncs into these rather than
+- **Instruction files:** [AGENTS.md](https://agents.md/) and `CLAUDE.md`. Aether Cache syncs into these rather than
   replacing them.
 
 ## Status and limitations
 
-memstore is early. Every feature works end to end in automated tests. The next step is testing it in real Claude Code
-sessions.
+Aether Cache is v1 and early. It works end to end in automated tests and is now being tried in real Claude Code sessions.
 
 **Not done yet:**
 - **A with-memory vs. without-memory evaluation** on real coding tasks, to measure whether it actually reduces
