@@ -94,7 +94,7 @@ You need **Java 11+** (`brew install openjdk@21` on macOS, or [adoptium.net](htt
 Python for you. Then:
 
 ```sh
-uv tool install git+https://github.com/anishchugh05/Aether-Cache-Redis-Compatible-Vector-Store
+uv tool install aether-cache
 aether-cache setup
 ```
 
