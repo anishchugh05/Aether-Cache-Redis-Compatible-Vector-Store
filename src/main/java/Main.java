@@ -433,9 +433,12 @@ public class Main {
     System.out.println("Logs from your program will appear here!");
 
     int port = 6379;
+    String bindAddress = null; // null = listen on all interfaces (the default, as before)
     for (int i = 0; i < args.length - 1; i++) {
       if (args[i].equals("--port")) {
         port = Integer.parseInt(args[i + 1]);
+      } else if (args[i].equals("--bind")) {
+        bindAddress = args[i + 1]; // e.g. 127.0.0.1: only accept connections from this machine
       } else if (args[i].equals("--dir")) {
         dir = args[i + 1];
       } else if (args[i].equals("--dbfilename")) {
@@ -531,7 +534,8 @@ public class Main {
         System.out.println("Couldn't set up AOF: " + e.getMessage());
       }
     }
-    try (ServerSocket serverSocket = new ServerSocket(port)) {
+    try (ServerSocket serverSocket = new ServerSocket(port, 50,
+        bindAddress == null ? null : java.net.InetAddress.getByName(bindAddress))) {
       serverSocket.setReuseAddress(true);
       if (masterHost != null) {
         connectToMaster(port);

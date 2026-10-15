@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aether-cache"
+version = "0.1.0"
+description = "Shared memory for AI coding tools that stays true to your code."
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{ name = "Anish Chugh" }]
+dependencies = [
+    "mcp>=1.2",
+    "fastembed>=0.3",
+    "redis>=5.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/anishchugh05/Aether-Cache-Redis-Compatible-Vector-Store"
+
+[project.scripts]
+aether-cache = "aether_cache.cli:main"
+
+[tool.setuptools]
+packages = ["aether_cache"]
+
+[tool.setuptools.package-data]
+aether_cache = ["engine/*.jar"]

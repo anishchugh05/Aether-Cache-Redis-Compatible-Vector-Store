@@ -38,7 +38,7 @@ memory layer, git awareness, and MCP server are things Redis doesn't do at all.
 
 ```
 Claude Code ─┐                       ┌─────────────────────────────────────────────┐
-Cursor ──────┼─ MCP ─► memory_mcp ───┼─ RESP ─► Java engine (Main.java)            │
+Cursor ──────┼─ MCP ─► aether_cache ─┼─ RESP ─► Java engine (Main.java)            │
 other tools ─┘   (Python: embeddings,│          memories, HNSW vector index,       │
                   git hashing, sync) │          history, append-only file on disk  │
                                      └─────────────────────────────────────────────┘
@@ -89,24 +89,38 @@ m1 retired; m3 replaces it.
 
 ## Quick start
 
-Requires Java 11+ and Python 3.10+.
+You need **Java 11+** (`brew install openjdk@21` on macOS, or [adoptium.net](https://adoptium.net)) and
+[**uv**](https://docs.astral.sh/uv/) (`curl -LsSf https://astral.sh/uv/install.sh | sh`), which also takes care of
+Python for you. Then:
 
 ```sh
-# 1. Python environment for the MCP server
-micromamba create -n aether-cache python=3.11 -y && micromamba activate aether-cache
-pip install -r memory_mcp/requirements.txt
-
-# 2. Start the engine, with memories saved to ~/.aether-cache (terminal 1)
-java src/main/java/Main.java --dir ~/.aether-cache --appendonly yes
-
-# 3. Connect it to Claude Code, for all projects (terminal 2)
-claude mcp add aether-cache --scope user -e MEMORY_SOURCE=claude-code -- \
-  $(which python) "$(pwd)/memory_mcp/server.py"
+uv tool install git+https://github.com/anishchugh05/Aether-Cache-Redis-Compatible-Vector-Store
+aether-cache setup
 ```
 
-Start `claude` in any git repo and run `/mcp` to check that `aether-cache` is connected. Memories are kept per project
-(the git repo's folder name), so projects never mix. Any other MCP-capable tool connects the same way; set
-`MEMORY_SOURCE` to its name so you can tell which tool saved what.
+`setup` starts the engine in the background, downloads the embedding model once (about 90 MB), and connects every
+supported AI tool it finds on your machine: **Claude Code, Cursor, and Codex**. That's it. Open your AI tool in any git
+repo and try:
+
+> Remember that our tests need DOCKER_HOST set. It depends on docker-compose.yml.
+
+Then start a new session and ask how to run the tests.
+
+Memories are kept per project (the git repo's folder name), so projects never mix. Everything stays on your machine:
+the engine only accepts connections from it, and your memories live in `~/.aether-cache`.
+
+| Command | What it does |
+|---|---|
+| `aether-cache setup` | One-time setup: engine, model, and AI tools |
+| `aether-cache status` | Is it running, and what's in this project's memory |
+| `aether-cache doctor` | Checks everything and tells you how to fix what's wrong |
+| `aether-cache list` / `recall "query"` / `explain m1` | Look at memories from the terminal |
+| `aether-cache sync` | Writes current memories into `AGENTS.md` / `CLAUDE.md` |
+| `aether-cache connect cursor` | Connects one tool (`--print` shows config for any other MCP tool) |
+| `aether-cache start` / `stop` | Runs or stops the engine (it also starts on its own when a tool needs it) |
+
+If `aether-cache` isn't found after installing, run `uv tool update-shell` and open a new terminal. Port 7380 taken?
+Set `AETHER_PORT` and run `setup` again. To uninstall: `aether-cache stop && uv tool uninstall aether-cache`.
 
 ## Tools the AI can call
 
@@ -120,7 +134,7 @@ Start `claude` in any git repo and run `/mcp` to check that `aether-cache` is co
 | `confirm_memory(id)` | Brings back a memory that's still true after its files changed, re-linked to the current versions. |
 | `check_stale()` | Runs the file check on demand. |
 | `list_conflicts()` / `resolve_conflict(...)` | Reviews pairs of very similar memories that may contradict each other. |
-| `sync_to_files()` | Writes current memories into `AGENTS.md` / `CLAUDE.md` (also: `python memory_mcp/server.py sync`). |
+| `sync_to_files()` | Writes current memories into `AGENTS.md` / `CLAUDE.md` (also: `aether-cache sync`). |
 
 ## Design decisions, and what the measurements said
 
@@ -257,6 +271,7 @@ doesn't force the SSD's own cache to flush, so `always` looks cheaper here than 
 
 ```sh
 java src/main/java/Main.java                                   # port 6379
+java src/main/java/Main.java --bind 127.0.0.1                  # accept connections from this machine only
 java src/main/java/Main.java --port 6380 --replicaof "localhost 6379"
 java src/main/java/Main.java --dir /tmp/data --appendonly yes --appendfsync everysec
 ```
@@ -295,7 +310,7 @@ Aether Cache is v1 and early. It works end to end in automated tests and is now 
 - **A with-memory vs. without-memory evaluation** on real coding tasks, to measure whether it actually reduces
   re-explaining.
 - **AOF compaction:** the log only grows, and every status change adds a line.
-- **Packaging as a prebuilt `.jar`,** so the engine starts instantly instead of compiling on launch.
+- **A dashboard** to browse, confirm, and retire memories in the browser.
 
 **Engine limitations:**
 - **Threading:** one OS thread per connection, not an event loop. That's fine for a local tool, but it won't scale to
@@ -314,7 +329,12 @@ Aether Cache is v1 and early. It works end to end in automated tests and is now 
 
 ```
 src/main/java/Main.java      the engine (single file, from the CodeCrafters setup)
-memory_mcp/server.py         MCP server: embeddings, git staleness, AGENTS.md/CLAUDE.md sync
+aether_cache/                the Python package behind the `aether-cache` command
+  server.py                  MCP server: embeddings, git staleness, AGENTS.md/CLAUDE.md sync
+  engine.py                  finds Java, starts and stops the engine in the background
+  connect.py                 registers Aether Cache with Claude Code, Cursor, and Codex
+  cli.py                     the `aether-cache` command
+  engine/aether-engine.jar   the prebuilt engine (rebuild with `python scripts/build_engine.py`)
 memory_mcp/calibrate.py      similarity calibration for duplicate/contradiction thresholds
 vector_bench.py              HNSW benchmark (writes results.json)
 crash_test.py                kill -9 crash-safety test
