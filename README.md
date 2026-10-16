@@ -112,6 +112,7 @@ the engine only accepts connections from it, and your memories live in `~/.aethe
 | Command | What it does |
 |---|---|
 | `aether-cache setup` | One-time setup: engine, model, and AI tools |
+| `aether-cache ui` | Opens the dashboard: see what your AI remembers, and confirm or retire memories whose files changed |
 | `aether-cache status` | Is it running, and what's in this project's memory |
 | `aether-cache doctor` | Checks everything and tells you how to fix what's wrong |
 | `aether-cache list` / `recall "query"` / `explain m1` | Look at memories from the terminal |
@@ -310,7 +311,6 @@ Aether Cache is v1 and early. It works end to end in automated tests and is now 
 - **A with-memory vs. without-memory evaluation** on real coding tasks, to measure whether it actually reduces
   re-explaining.
 - **AOF compaction:** the log only grows, and every status change adds a line.
-- **A dashboard** to browse, confirm, and retire memories in the browser.
 
 **Engine limitations:**
 - **Threading:** one OS thread per connection, not an event loop. That's fine for a local tool, but it won't scale to
@@ -334,6 +334,7 @@ aether_cache/                the Python package behind the `aether-cache` comman
   engine.py                  finds Java, starts and stops the engine in the background
   connect.py                 registers Aether Cache with Claude Code, Cursor, and Codex
   cli.py                     the `aether-cache` command
+  ui.py, ui/index.html       the dashboard (`aether-cache ui`): a local server, its API, and the page
   engine/aether-engine.jar   the prebuilt engine (rebuild with `python scripts/build_engine.py`)
 memory_mcp/calibrate.py      similarity calibration for duplicate/contradiction thresholds
 vector_bench.py              HNSW benchmark (writes results.json)

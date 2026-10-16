@@ -7,3 +7,15 @@ __pycache__/
 *.egg-info/
 build/
 dist/
+
+# AI tool and design-hook config (Impeccable etc.), kept local
+.claude/
+.agent/
+.agents/
+.codex/
+.cursor/
+.gemini/
+.kiro/
+.impeccable/
+PRODUCT.md
+DESIGN.md

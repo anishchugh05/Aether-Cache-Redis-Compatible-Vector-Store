@@ -17,6 +17,7 @@ HOME = Path(_env("AETHER_HOME", default=str(Path.home() / ".aether-cache"))).exp
 DATA_DIR = HOME / "data"
 LOG_FILE = HOME / "engine.log"
 PID_FILE = HOME / "engine.pid"
+STAMP_FILE = HOME / "engine.version"  # which engine file the running engine was started from
 MODELS_DIR = HOME / "models"
 
 # The engine listens on this machine only. The port is deliberately not Redis's 6379, so Aether Cache

@@ -1,0 +1,774 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Aether Cache</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect x='1' y='1' width='14' height='14' rx='3.5' fill='%2310282A'/%3E%3Ccircle cx='8' cy='8' r='3' fill='%233BC08F'/%3E%3C/svg%3E">
+<style>
+/* IBM Plex, self-hosted and shipped with the package: the dashboard loads nothing from the internet. */
+@font-face { font-family: "Plex Sans"; font-weight: 400; font-display: swap; src: url(/fonts/ibm-plex-sans-latin-400-normal.woff2) format("woff2"); }
+@font-face { font-family: "Plex Sans"; font-weight: 500; font-display: swap; src: url(/fonts/ibm-plex-sans-latin-500-normal.woff2) format("woff2"); }
+@font-face { font-family: "Plex Sans"; font-weight: 600; font-display: swap; src: url(/fonts/ibm-plex-sans-latin-600-normal.woff2) format("woff2"); }
+@font-face { font-family: "Plex Mono"; font-weight: 400; font-display: swap; src: url(/fonts/ibm-plex-mono-latin-400-normal.woff2) format("woff2"); }
+@font-face { font-family: "Plex Mono"; font-weight: 500; font-display: swap; src: url(/fonts/ibm-plex-mono-latin-500-normal.woff2) format("woff2"); }
+
+/* ---------- tokens ----------
+   World: facts about code that stay fresh or go stale. The shell is deep spruce; state colours carry meaning
+   (fresh green, oxidised amber for stale, slate for retired/replaced); actions are solid ink. */
+:root {
+  --ground: #EDF1F0;
+  --surface: #FFFFFF;
+  --surface-2: #F5F8F7;
+  --ink: #10201F;
+  --ink-2: #4A5D5C;
+  --rule: #D6DFDD;
+  --rail: #10282A;
+  --rail-ink: #E4EFED;
+  --rail-2: #8FAEAB;
+  --rail-active: #1D3E41;
+  --rail-stale: #F2A964;
+  --fresh: #0E7553;
+  --stale: #A9500E;
+  --gone: #75868A;
+  --stale-tint: #FBEFE4;
+  --fresh-tint: #E3F2EC;
+  --btn: #10201F;
+  --btn-ink: #FFFFFF;
+  --focus: #17878B;
+
+  --sans: "Plex Sans", ui-sans-serif, -apple-system, "Segoe UI", system-ui, sans-serif;
+  --mono: "Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+
+  --t-xs: 12px; --t-sm: 13px; --t-md: 15px; --t-lg: 17px; --t-xl: 22px;
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px; --s6: 32px; --s7: 48px;
+  --radius: 8px;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ground: #0A1112; --surface: #111A1B; --surface-2: #162122; --ink: #E0EAE8; --ink-2: #94A9A7; --rule: #223031;
+    --rail: #071011; --rail-ink: #DCE9E7; --rail-2: #6F8D8A; --rail-active: #13282A; --rail-stale: #EE9F57;
+    --fresh: #3BBF8E; --stale: #EC9A4C; --gone: #7F9395; --stale-tint: #2A1C0F; --fresh-tint: #0F271F;
+    --btn: #E0EAE8; --btn-ink: #0A1112; --focus: #4CC4C7;
+  }
+}
+
+/* ---------- base, including the browser surfaces people forget ---------- */
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body {
+  background: var(--ground); color: var(--ink);
+  font: 400 var(--t-md)/1.55 var(--sans);
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
+  caret-color: var(--focus);
+  scrollbar-color: var(--rule) transparent;
+}
+::selection { background: color-mix(in srgb, var(--focus) 28%, transparent); }
+button, input { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 4px; }
+.mono { font-family: var(--mono); font-size: 0.87em; }
+.muted { color: var(--ink-2); }
+svg.icon { display: block; flex-shrink: 0; }
+
+/* ---------- shell ---------- */
+.app { display: grid; grid-template-columns: 252px minmax(0, 1fr); height: 100vh; }
+.app.has-detail { grid-template-columns: 252px minmax(0, 1fr) minmax(360px, 420px); }
+
+nav.rail {
+  background: var(--rail); color: var(--rail-ink); display: flex; flex-direction: column; min-height: 0;
+  scrollbar-color: var(--rail-active) transparent;
+}
+.wordmark { display: flex; align-items: center; gap: 10px; padding: 18px 20px 22px; font-weight: 600; font-size: var(--t-md); letter-spacing: -0.01em; }
+.rail h2 { font-size: var(--t-xs); font-weight: 500; color: var(--rail-2); margin: 0 20px var(--s2); }
+.projects { list-style: none; margin: 0; padding: 0 10px; overflow-y: auto; flex: 1; }
+.project {
+  display: block; width: 100%; text-align: left; border: 0; background: none; color: inherit; cursor: pointer;
+  padding: 9px 10px; border-radius: 6px; transition: background-color 150ms ease;
+}
+.project .name { display: block; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.project .meta { display: block; font-size: var(--t-xs); color: var(--rail-2); }
+.project .meta .hot { color: var(--rail-stale); }
+.project[aria-current="true"] { background: var(--rail-active); }
+.engine { display: flex; align-items: center; gap: var(--s2); padding: 14px 20px; font-size: var(--t-xs); color: var(--rail-2); border-top: 1px solid var(--rail-active); }
+.engine .dot { width: 7px; height: 7px; border-radius: 50%; background: #3BBF8E; flex-shrink: 0; }
+.engine.down .dot { background: var(--rail-stale); }
+.engine .ver { margin-left: auto; font-family: var(--mono); }
+
+main { overflow-y: auto; min-width: 0; }
+.page { max-width: 940px; padding: 28px 40px 64px; }
+.page-head { margin-bottom: 28px; }
+.page-head h1 { font-size: var(--t-xl); font-weight: 600; letter-spacing: -0.015em; line-height: 1.25; margin: 0; overflow-wrap: anywhere; }
+.page-head .repo { display: block; margin-top: 2px; font-size: var(--t-xs); color: var(--ink-2); overflow-wrap: anywhere; }
+section + section { margin-top: 36px; }
+h2.section { display: flex; align-items: baseline; gap: var(--s2); font-size: var(--t-lg); font-weight: 600; letter-spacing: -0.01em; margin: 0 0 2px; }
+h2.section .count { font-size: var(--t-sm); font-weight: 600; color: var(--stale); }
+.lede { margin: 0 0 var(--s4); color: var(--ink-2); font-size: var(--t-sm); max-width: 68ch; }
+
+/* ---------- state marks (drawn, never colour alone: every mark sits beside its word) ---------- */
+.pip { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; margin-top: 7px; transition: background-color 200ms ease, border-color 200ms ease; }
+.pip.active { background: var(--fresh); }
+.pip.stale { border: 2px solid var(--stale); background: transparent; }
+.pip.retired, .pip.superseded { width: 9px; height: 2px; border-radius: 1px; background: var(--gone); margin-top: 11px; }
+.pip.conflict { border-radius: 2px; transform: rotate(45deg) scale(0.85); background: var(--stale); }
+
+/* ---------- panels ---------- */
+.panel { background: var(--surface); border: 1px solid var(--rule); border-radius: var(--radius); }
+.calm { display: flex; gap: var(--s3); align-items: flex-start; padding: 14px 18px; font-size: var(--t-sm); color: var(--ink-2); }
+.calm strong { color: var(--ink); font-weight: 600; }
+
+/* needs a decision */
+.fold { display: grid; grid-template-rows: 1fr; transition: grid-template-rows 240ms var(--ease-in-out) 160ms; }
+.fold > * { min-height: 0; overflow: hidden; }
+.fold + .fold > * > .decision { border-top: 1px solid var(--rule); }
+.fold.gone { grid-template-rows: 0fr; }
+.decision { display: grid; grid-template-columns: 9px minmax(0, 1fr); gap: 14px; padding: 18px 20px; transition: opacity 180ms var(--ease-out), transform 180ms var(--ease-out), filter 180ms var(--ease-out); }
+.fold.gone .decision { opacity: 0; transform: translateX(6px); filter: blur(2px); }
+.decision .text { font-size: var(--t-lg); line-height: 1.45; margin: 0 0 6px; overflow-wrap: anywhere; }
+.decision .why { font-size: var(--t-sm); color: var(--stale); margin: 0 0 var(--s3); overflow-wrap: anywhere; transition: color 200ms ease; }
+.decision.confirmed .why { color: var(--fresh); }
+.decision .meta { font-size: var(--t-xs); color: var(--ink-2); margin: 0 0 14px; }
+
+/* the signature: what each linked file was when the memory was saved, and what it is now */
+.diff { display: grid; grid-template-columns: minmax(0, max-content) auto; gap: 4px 18px; margin: 0 0 var(--s3); padding: 10px 12px; background: var(--surface-2); border-radius: 6px; font-family: var(--mono); font-size: var(--t-xs); width: fit-content; max-width: 100%; }
+.diff .path { overflow-wrap: break-word; min-width: 0; }
+code.inline { font-family: var(--mono); font-size: 0.86em; background: var(--surface-2); border: 1px solid var(--rule); border-radius: 4px; padding: 0 4px; overflow-wrap: anywhere; }
+.row.superseded code.inline, .row.retired code.inline { color: var(--ink-2); }
+.diff .hashes { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+.diff .was { color: var(--ink-2); }
+.diff .was.changed { text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--ink-2) 60%, transparent); }
+.diff .now { color: var(--stale); font-weight: 500; background: var(--stale-tint); padding: 0 5px; border-radius: 4px; transition: color 200ms ease, background-color 200ms ease; }
+.decision.confirmed .diff .now { color: var(--fresh); background: var(--fresh-tint); }
+.diff .same { color: var(--ink-2); }
+.diff svg { color: var(--ink-2); }
+
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s4); margin: 0 0 14px; }
+.pair .label { font-size: var(--t-xs); color: var(--ink-2); }
+.pair p { margin: 2px 0 0; overflow-wrap: anywhere; }
+
+/* ---------- controls ---------- */
+.actions { display: flex; gap: var(--s2); flex-wrap: wrap; align-items: center; }
+.btn {
+  height: 32px; padding: 0 13px; border: 1px solid var(--rule); background: var(--surface); border-radius: 6px;
+  font-size: var(--t-sm); font-weight: 500; cursor: pointer; white-space: nowrap;
+  transition: transform 160ms var(--ease-out), background-color 150ms ease, border-color 150ms ease, opacity 150ms ease;
+}
+.btn:active { transform: scale(0.97); }
+.btn.primary { background: var(--btn); border-color: var(--btn); color: var(--btn-ink); }
+.btn:disabled { opacity: 0.5; cursor: progress; transform: none; }
+.btn.icon-only { width: 32px; padding: 0; display: inline-grid; place-items: center; }
+@media (hover: hover) and (pointer: fine) {
+  .btn:hover { border-color: var(--ink-2); }
+  .btn.primary:hover { opacity: 0.88; }
+  .project:hover { background: var(--rail-active); }
+  .row:hover { background: var(--surface-2); }
+}
+.retire-form { display: flex; gap: var(--s2); flex-wrap: wrap; width: 100%; margin-top: var(--s2); }
+.retire-form input, .search input {
+  border: 1px solid var(--rule); border-radius: 6px; background: var(--surface); height: 34px; padding: 0 12px; font-size: var(--t-sm);
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+.retire-form input { flex: 1 1 260px; background: var(--surface-2); }
+.retire-form input:focus, .search input:focus { outline: none; border-color: var(--focus); box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus) 20%, transparent); }
+::placeholder { color: var(--ink-2); opacity: 1; }
+
+.toolbar { display: flex; gap: var(--s3); flex-wrap: wrap; align-items: center; margin-bottom: var(--s3); }
+.search { flex: 1 1 280px; position: relative; }
+.search input { width: 100%; padding-left: 34px; height: 36px; font-size: var(--t-md); }
+.search svg { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--ink-2); pointer-events: none; }
+.tabs { display: inline-flex; gap: 2px; padding: 3px; background: var(--surface-2); border: 1px solid var(--rule); border-radius: 8px; max-width: 100%; overflow-x: auto; }
+.tabs button { border: 0; background: none; height: 28px; padding: 0 10px; border-radius: 5px; cursor: pointer; font-size: var(--t-sm); color: var(--ink-2); white-space: nowrap; transition: background-color 150ms ease, color 150ms ease; }
+.tabs button[aria-pressed="true"] { background: var(--surface); color: var(--ink); font-weight: 500; box-shadow: 0 1px 2px rgba(16, 32, 31, 0.08), 0 1px 1px rgba(16, 32, 31, 0.04); }
+.tabs .n { margin-left: 5px; color: var(--ink-2); font-size: var(--t-xs); }
+
+/* ---------- memory list ---------- */
+ol.memories { list-style: none; margin: 0; padding: 0; }
+ol.memories li + li .row { border-top: 1px solid var(--rule); }
+.row {
+  display: grid; grid-template-columns: 9px 4.5ch minmax(0, 1fr) auto; gap: 14px; align-items: start; width: 100%;
+  padding: 13px 16px; border: 0; background: none; text-align: left; cursor: pointer; transition: background-color 120ms ease;
+}
+ol.memories li:first-child .row { border-radius: var(--radius) var(--radius) 0 0; }
+ol.memories li:last-child .row { border-radius: 0 0 var(--radius) var(--radius); }
+ol.memories li:only-child .row { border-radius: var(--radius); }
+.row[aria-current="true"] { background: var(--surface-2); }
+.row .pip { margin-top: 8px; }
+.row .id { color: var(--ink-2); padding-top: 2px; }
+.row .text { display: block; overflow-wrap: anywhere; }
+.row.superseded .text, .row.retired .text { color: var(--ink-2); }
+.row .files { display: flex; flex-wrap: wrap; gap: 0 14px; margin-top: 2px; font-size: var(--t-xs); color: var(--ink-2); }
+.row .files .mono { font-size: 1em; overflow-wrap: anywhere; }
+.row .side { text-align: right; font-size: var(--t-xs); color: var(--ink-2); white-space: nowrap; line-height: 1.5; padding-top: 2px; }
+.word { font-weight: 600; }
+.word.active { color: var(--fresh); }
+.word.stale { color: var(--stale); }
+.word.retired, .word.superseded { color: var(--gone); }
+
+.skeleton .row { cursor: default; align-items: center; }
+.skeleton .bar { display: block; height: 10px; border-radius: 5px; background: var(--rule); opacity: 0.6; animation: pulse 1.4s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: 0.3; } }
+.empty { padding: 20px; color: var(--ink-2); font-size: var(--t-sm); overflow-wrap: anywhere; }
+
+/* ---------- detail ---------- */
+aside.detail {
+  display: none; background: var(--surface); border-left: 1px solid var(--rule); overflow-y: auto; padding: 24px 26px 40px;
+}
+.has-detail aside.detail {
+  display: block; opacity: 1; transform: none;
+  transition: opacity 200ms var(--ease-out), transform 220ms var(--ease-out);
+  @starting-style { opacity: 0; transform: translateX(12px); }
+}
+.detail-head { display: flex; align-items: center; gap: var(--s2); margin-bottom: 14px; }
+.detail-head .pip { margin-top: 0; }
+.detail-head h2 { margin: 0; font-family: var(--mono); font-size: var(--t-md); font-weight: 500; }
+.detail-head .btn { margin-left: auto; }
+.detail .text { font-size: var(--t-lg); line-height: 1.45; margin: 0 0 18px; overflow-wrap: anywhere; }
+dl.facts { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px 18px; margin: 0 0 20px; font-size: var(--t-sm); }
+dl.facts dt { color: var(--ink-2); }
+dl.facts dd { margin: 0; overflow-wrap: anywhere; }
+dl.facts .files { display: flex; flex-direction: column; gap: 2px; }
+.detail h3 { font-size: var(--t-sm); font-weight: 600; margin: 26px 0 12px; }
+ol.timeline { list-style: none; margin: 0; padding: 0; }
+ol.timeline li { display: grid; grid-template-columns: 9px minmax(0, 1fr); gap: 14px; padding-bottom: 16px; position: relative; }
+ol.timeline li:not(:last-child)::before { content: ""; position: absolute; left: 4px; top: 20px; bottom: 2px; width: 1px; background: var(--rule); }
+ol.timeline .what { font-weight: 500; font-size: var(--t-sm); }
+ol.timeline .when { font-size: var(--t-xs); color: var(--ink-2); margin-left: var(--s2); }
+ol.timeline .details { font-size: var(--t-sm); color: var(--ink-2); margin: 1px 0 0; overflow-wrap: anywhere; }
+
+/* ---------- messages ---------- */
+.notice {
+  position: fixed; left: 50%; bottom: 24px; max-width: min(520px, calc(100vw - 32px)); z-index: 20;
+  background: var(--btn); color: var(--btn-ink); padding: 9px 14px; border-radius: 8px; font-size: var(--t-sm);
+  box-shadow: 0 8px 24px rgba(8, 20, 20, 0.18), 0 2px 6px rgba(8, 20, 20, 0.12);
+  opacity: 0; transform: translate(-50%, 6px); pointer-events: none;
+  transition: opacity 140ms ease, transform 140ms ease;
+}
+.notice.show { opacity: 1; transform: translate(-50%, 0); transition: opacity 200ms var(--ease-out), transform 220ms var(--ease-out); }
+.blocker { max-width: 58ch; margin: 14vh auto; padding: 0 24px; }
+.blocker h1 { font-size: var(--t-xl); font-weight: 600; margin: 0 0 var(--s3); letter-spacing: -0.015em; }
+.blocker p { color: var(--ink-2); }
+.blocker code { font-family: var(--mono); font-size: 0.9em; color: var(--ink); background: var(--surface); border: 1px solid var(--rule); padding: 2px 6px; border-radius: 4px; }
+
+/* ---------- small screens ---------- */
+@media (max-width: 900px) {
+  .app, .app.has-detail { grid-template-columns: 1fr; grid-template-rows: auto 1fr; height: auto; min-height: 100vh; }
+  nav.rail { flex-direction: row; align-items: center; overflow-x: auto; }
+  .wordmark { padding: 14px 16px; flex-shrink: 0; }
+  .rail h2, .engine { display: none; }
+  .projects { display: flex; gap: 4px; padding: 8px 8px 8px 0; overflow: visible; }
+  .project { width: auto; max-width: 200px; padding: 6px 10px; }
+  .page { padding: 20px 16px 56px; }
+  .pair { grid-template-columns: 1fr; }
+  aside.detail { position: fixed; inset: 0; z-index: 10; border-left: 0; }
+}
+@media (max-width: 560px) {
+  .diff { grid-template-columns: minmax(0, 1fr); width: auto; }
+  .diff .hashes { margin-bottom: 6px; }
+  .row { grid-template-columns: 9px minmax(0, 1fr) auto; }
+  .row .id { display: none; }
+  .decision { padding: 16px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fold, .decision, .notice, .notice.show, .has-detail aside.detail { transition-duration: 1ms; transition-delay: 0ms; }
+  .fold.gone .decision { transform: none; filter: none; }
+  .skeleton .bar { animation: none; }
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<div class="notice" id="notice" role="status" aria-live="polite"></div>
+
+<script>
+"use strict";
+
+// ---------- token: arrives after # (never sent to a server or logged), then kept for this tab only ----------
+const TOKEN = (() => {
+  const fromHash = new URLSearchParams(location.hash.slice(1)).get("token");
+  if (fromHash) {
+    try { sessionStorage.setItem("aether-token", fromHash); } catch (e) {}
+    history.replaceState(null, "", location.pathname);
+    return fromHash;
+  }
+  try { return sessionStorage.getItem("aether-token"); } catch (e) { return null; }
+})();
+
+const state = {
+  projects: [], project: null, filter: "any", q: "",
+  memories: [], attention: null, selected: null, detail: null,
+  version: "", engineUp: true, loadingList: false, listLoaded: false,
+};
+const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+// ---------- small helpers ----------
+// Builds elements with textContent only, so memory text (written by AI tools) can never inject markup.
+function h(tag, attrs, ...children) {
+  const el = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs || {})) {
+    if (v === null || v === undefined || v === false) continue;
+    if (k === "class") el.className = v;
+    else if (k.startsWith("on")) el.addEventListener(k.slice(2), v);
+    else el.setAttribute(k, v === true ? "" : v);
+  }
+  for (const c of children.flat(Infinity)) {
+    if (c === null || c === undefined || c === false) continue;
+    el.append(c instanceof Node ? c : document.createTextNode(String(c)));
+  }
+  return el;
+}
+// Replaces an element's contents, skipping empty values (DOM's replaceChildren would print "null")
+function put(el, ...children) {
+  el.replaceChildren(...children.flat(Infinity).filter((c) => c !== null && c !== undefined && c !== false));
+}
+// Drawn icons in one stroke weight, so nothing leans on unicode glyphs
+function icon(name, size = 14) {
+  const paths = {
+    search: '<circle cx="7" cy="7" r="4.75"/><path d="M10.5 10.5 14 14"/>',
+    arrow: '<path d="M2 8h11M9.5 4.5 13 8l-3.5 3.5"/>',
+    close: '<path d="M4 4l8 8M12 4l-8 8"/>',
+  };
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("viewBox", "0 0 16 16"); svg.setAttribute("width", size); svg.setAttribute("height", size);
+  svg.setAttribute("fill", "none"); svg.setAttribute("stroke", "currentColor"); svg.setAttribute("stroke-width", "1.5");
+  svg.setAttribute("stroke-linecap", "round"); svg.setAttribute("stroke-linejoin", "round");
+  svg.setAttribute("class", "icon"); svg.setAttribute("aria-hidden", "true");
+  svg.innerHTML = paths[name];
+  return svg;
+}
+const plural = (n, one, many = one + "s") => `${n.toLocaleString()} ${n === 1 ? one : many}`;
+const STATE_WORD = { active: "active", stale: "stale", retired: "retired", superseded: "replaced" };
+// "retired" isn't an engine status: it's a stale memory someone retired on purpose (vs. its files changing)
+const shown = (m) => (m.status === "stale" && m.retired ? "retired" : m.status);
+const shortHash = (hash) => (hash && hash !== "missing" ? hash.slice(0, 7) : hash || "");
+const pip = (kind) => h("span", { class: `pip ${kind}`, "aria-hidden": "true" });
+
+function ago(ms) {
+  const s = Math.round((Date.now() - ms) / 1000);
+  if (s < 60) return "just now";
+  const m = Math.round(s / 60); if (m < 60) return `${m} min ago`;
+  const hr = Math.round(m / 60); if (hr < 24) return `${hr} h ago`;
+  const d = Math.round(hr / 24); if (d < 30) return plural(d, "day") + " ago";
+  return new Date(ms).toLocaleDateString();
+}
+const exact = (ms) => new Date(ms).toLocaleString();
+const time = (ms) => h("time", { datetime: new Date(ms).toISOString(), title: exact(ms) }, ago(ms));
+
+async function api(path, body) {
+  const opts = { headers: { "X-Aether-Token": TOKEN || "" } };
+  if (body) {
+    opts.method = "POST";
+    opts.headers["Content-Type"] = "application/json";
+    opts.body = JSON.stringify(body);
+  }
+  let res;
+  try {
+    res = await fetch(path, opts);
+  } catch (e) {
+    state.engineUp = false; renderEngine();
+    throw new Error("The dashboard stopped. Run `aether-cache ui` again.");
+  }
+  const data = await res.json().catch(() => ({}));
+  state.engineUp = res.status !== 503; renderEngine();
+  if (!res.ok) throw new Error(data.error || `Request failed (${res.status}).`);
+  return data;
+}
+
+let noticeTimer;
+function notify(text) {
+  const n = document.getElementById("notice");
+  n.textContent = text;
+  n.classList.add("show");
+  clearTimeout(noticeTimer);
+  noticeTimer = setTimeout(() => n.classList.remove("show"), 3200);
+}
+
+// File paths break only after a slash, never mid-name
+function pathNodes(text) {
+  return String(text).split("/").flatMap((part, i, all) => (i < all.length - 1 ? [part + "/", h("wbr")] : [part]));
+}
+// AI tools write `commands` in backticks; show them as code (still plain text nodes, never markup)
+function richText(text) {
+  return String(text).split(/`([^`\n]+)`/).map((part, i) => (i % 2 ? h("code", { class: "inline" }, part) : part));
+}
+
+function fingerprints(files) {
+  return files.map((f) => h("span", { class: "mono", title: f.hash ? `${f.path} at content hash ${f.hash}` : f.path },
+    pathNodes(f.path), f.hash ? h("span", { class: "muted" }, " @", shortHash(f.hash)) : null));
+}
+
+// Each linked file of a stale memory: the version it was saved against, and what the file is now
+function diff(files) {
+  const known = files.filter((f) => f.now !== undefined);
+  if (!known.length) return null;
+  return h("div", { class: "diff", role: "table", "aria-label": "Linked files: saved version and current version" },
+    known.map((f) => {
+      const changed = f.now !== f.hash;
+      return h("div", { role: "row", style: "display:contents" },
+        h("span", { class: "path", role: "cell" }, pathNodes(f.path)),
+        h("span", { class: "hashes", role: "cell" },
+          h("span", { class: `was${changed ? " changed" : ""}`, title: `saved against ${f.hash}` }, shortHash(f.hash)),
+          changed ? [icon("arrow", 12), h("span", { class: "now", title: f.now === "missing" ? "deleted" : `now ${f.now}` },
+                                          f.now === "missing" ? "deleted" : shortHash(f.now))]
+                  : h("span", { class: "same" }, "unchanged")));
+    }));
+}
+
+// Engine events -> words a person would use, and the state mark that goes with them
+function describe(event, details = "") {
+  const m = event.match(/^(\w+) -> (\w+)$/);
+  if (m) {
+    const to = m[2];
+    if (to === "stale") return details.endsWith("since this was saved") ? ["Went stale", "stale"] : ["Retired", "retired"];
+    if (to === "active") return ["Confirmed still true", "active"];
+    if (to === "superseded") return ["Replaced", "superseded"];
+  }
+  const words = { created: "Saved", seen: "Came up again", "re-linked": "Re-linked to new file versions",
+                  resolved: "Conflict resolved", "possible conflict": "Flagged as a possible conflict" };
+  return [words[event] || event.charAt(0).toUpperCase() + event.slice(1), event === "created" ? "active" : "superseded"];
+}
+
+// ---------- data ----------
+async function loadProjects() {
+  const data = await api("/api/projects");
+  state.projects = data.projects;
+  state.version = data.version;
+  if (!state.project || !state.projects.some((p) => p.name === state.project)) {
+    let saved = null;
+    try { saved = sessionStorage.getItem("aether-project"); } catch (e) {}
+    state.project = (state.projects.find((p) => p.name === saved) || state.projects[0] || {}).name || null;
+  }
+}
+
+async function loadAttention() {
+  state.attention = state.project ? await api(`/api/attention?project=${encodeURIComponent(state.project)}`) : null;
+}
+
+let listRequest = 0;
+async function loadMemories() {
+  if (!state.project) { state.memories = []; return; }
+  const mine = ++listRequest;
+  state.loadingList = true; renderList();
+  const params = new URLSearchParams({ project: state.project, status: state.filter });
+  if (state.q) params.set("q", state.q);
+  try {
+    const data = await api(`/api/memories?${params}`);
+    if (mine !== listRequest) return; // a newer search started meanwhile
+    state.memories = data.memories; state.listLoaded = true;
+  } finally {
+    if (mine === listRequest) { state.loadingList = false; renderList(); }
+  }
+}
+
+async function openMemory(id) {
+  state.selected = id; renderList();
+  try { state.detail = await api(`/api/memory?id=${encodeURIComponent(id)}`); } catch (e) { notify(e.message); return; }
+  renderDetail();
+  document.querySelector(".app").classList.add("has-detail");
+  document.querySelector("aside.detail h2")?.focus();
+}
+
+function closeDetail() {
+  const id = state.selected;
+  state.selected = null; state.detail = null;
+  document.querySelector(".app").classList.remove("has-detail");
+  renderList();
+  document.querySelector(`.row[data-id="${CSS.escape(id || "")}"]`)?.focus();
+}
+
+async function refreshAll() {
+  await loadProjects();
+  renderProjects(); renderHead();
+  await loadAttention();
+  if (state.attention && state.attention.just_went_stale) { await loadProjects(); renderProjects(); }
+  renderAttention();
+  await loadMemories();
+  if (state.selected) {
+    try { state.detail = await api(`/api/memory?id=${encodeURIComponent(state.selected)}`); renderDetail(); } catch (e) {}
+  }
+}
+
+async function selectProject(name) {
+  state.project = name; state.q = ""; state.filter = "any"; state.selected = null; state.detail = null;
+  state.memories = []; state.listLoaded = false; state.attention = null;
+  try { sessionStorage.setItem("aether-project", name); } catch (e) {}
+  document.querySelector(".app").classList.remove("has-detail");
+  const search = document.getElementById("search"); if (search) search.value = "";
+  renderProjects(); renderHead(); renderAttention(); renderList();
+  try { await refreshAll(); } catch (e) { notify(e.message); }
+}
+
+// ---------- actions ----------
+const wait = (ms) => new Promise((r) => setTimeout(r, REDUCED ? 0 : ms));
+
+// Runs an action. For decisions, the one authored moment: the item resolves in place (a confirmed memory turns
+// fresh before your eyes), then folds away, so you see what your click did before the list moves.
+async function act(button, path, body, done, item, confirming) {
+  button.disabled = true;
+  try {
+    await api(path, body);
+    notify(done);
+    if (item) {
+      if (confirming) {
+        const d = item.querySelector(".decision");
+        d.classList.add("confirmed");
+        d.querySelector(".pip")?.classList.replace("stale", "active");
+        const why = d.querySelector(".why");
+        if (why) why.textContent = "Confirmed still true, and re-linked to the current files.";
+        await wait(520);
+      }
+      item.classList.add("gone");
+      await wait(420);
+    }
+    await refreshAll();
+  } catch (e) {
+    notify(e.message);
+    button.disabled = false;
+  }
+}
+
+function retireForm(memory, container, item) {
+  const input = h("input", { type: "text", "aria-label": `Why is ${memory.id} no longer true?`,
+                             placeholder: "Why is it no longer true? (optional)", maxlength: "300" });
+  const go = h("button", { class: "btn primary", type: "button",
+    onclick: () => act(go, "/api/retire", { id: memory.id, reason: input.value }, `${memory.id} retired.`, item) }, "Retire");
+  const cancel = h("button", { class: "btn", type: "button", onclick: () => { form.remove(); trigger.hidden = false; trigger.focus(); } }, "Cancel");
+  input.addEventListener("keydown", (e) => { if (e.key === "Enter") go.click(); if (e.key === "Escape") { e.stopPropagation(); cancel.click(); } });
+  const form = h("div", { class: "retire-form" }, input, go, cancel);
+  const trigger = container.querySelector(".retire-trigger");
+  trigger.hidden = true;
+  container.append(form);
+  input.focus();
+}
+
+// ---------- rendering ----------
+function renderEngine() {
+  const el = document.getElementById("engine");
+  if (!el) return;
+  el.className = "engine" + (state.engineUp ? "" : " down");
+  put(el, h("span", { class: "dot", "aria-hidden": "true" }), state.engineUp ? "Engine running" : "Engine not reachable",
+      state.version ? h("span", { class: "ver" }, `v${state.version}`) : null);
+}
+
+function renderProjects() {
+  put(document.getElementById("projects"), state.projects.map((p) => {
+    const total = p.counts.active + p.counts.stale + p.counts.retired + p.counts.superseded;
+    return h("li", {}, h("button", { class: "project", type: "button", "aria-current": p.name === state.project ? "true" : "false",
+                                     onclick: () => selectProject(p.name), title: p.name },
+      h("span", { class: "name" }, p.name),
+      h("span", { class: "meta" }, plural(total, "memory", "memories"),
+        p.counts.stale ? [", ", h("span", { class: "hot" }, `${p.counts.stale} stale`)] : null)));
+  }));
+}
+
+function renderHead() {
+  const p = state.projects.find((x) => x.name === state.project);
+  put(document.getElementById("head"), p ? [h("h1", {}, p.name),
+    h("span", { class: "repo mono" }, p.repo || "Repo location not known yet")] : null);
+}
+
+function renderAttention() {
+  const sec = document.getElementById("attention");
+  const a = state.attention;
+  if (!state.project) { put(sec); return; }
+  const pending = a ? a.stale.length + a.conflicts.length : 0;
+  const head = h("h2", { class: "section", id: "attention-h" }, "Needs a decision",
+                 pending ? h("span", { class: "count", "aria-label": plural(pending, "item") }, pending) : null);
+  if (!a) {
+    put(sec, head, h("div", { class: "panel calm" }, "Checking linked files…"));
+    return;
+  }
+
+  const items = [];
+  for (const m of a.stale) {
+    const fold = h("div", { class: "fold" });
+    const actions = h("div", { class: "actions" });
+    const confirm = h("button", { class: "btn primary", type: "button",
+      onclick: () => act(confirm, "/api/confirm", { id: m.id },
+        m.files.length ? `${m.id} confirmed and re-linked.` : `${m.id} confirmed.`, fold, true) }, "Still true");
+    put(actions, confirm,
+      h("button", { class: "btn retire-trigger", type: "button", onclick: () => retireForm(m, actions, fold) }, "Retire…"),
+      h("button", { class: "btn", type: "button", onclick: () => openMemory(m.id) }, "History"));
+    put(fold, h("div", {}, h("article", { class: "decision", "aria-labelledby": `d-${m.id}` },
+      pip("stale"),
+      h("div", {},
+        h("p", { class: "text", id: `d-${m.id}` }, richText(m.text)),
+        h("p", { class: "why" }, m.reason ? pathNodes(`Went stale: ${m.reason}.`) : "Marked stale."),
+        diff(m.files),
+        h("p", { class: "meta" }, `Saved by ${m.source} `, time(m.created_at), " as ", h("span", { class: "mono" }, m.id)),
+        actions))));
+    items.push(fold);
+  }
+  for (const c of a.conflicts) {
+    const fold = h("div", { class: "fold" });
+    const replace = h("button", { class: "btn primary", type: "button",
+      onclick: () => act(replace, "/api/resolve", { new_id: c.new_id, old_id: c.old_id }, `${c.old_id} replaced by ${c.new_id}.`, fold) },
+      "Newer one replaces older");
+    const both = h("button", { class: "btn", type: "button",
+      onclick: () => act(both, "/api/resolve", { new_id: c.new_id, old_id: c.old_id, keep_both: true }, `Kept both ${c.new_id} and ${c.old_id}.`, fold) },
+      "Both are true");
+    put(fold, h("div", {}, h("article", { class: "decision", "aria-label": `Possible conflict between ${c.new_id} and ${c.old_id}` },
+      pip("conflict"),
+      h("div", {},
+        h("p", { class: "why" }, `These may contradict each other (similarity ${c.similarity.toFixed(2)}).`),
+        h("div", { class: "pair" },
+          h("div", {}, h("span", { class: "label" }, "Newer, ", h("span", { class: "mono" }, c.new_id)), h("p", {}, richText(c.new_text))),
+          h("div", {}, h("span", { class: "label" }, "Older, ", h("span", { class: "mono" }, c.old_id)), h("p", {}, richText(c.old_text)))),
+        h("div", { class: "actions" }, replace, both)))));
+    items.push(fold);
+  }
+
+  if (items.length) {
+    put(sec, head,
+      h("p", { class: "lede" }, a.stale.length
+        ? "These went stale because files they depend on changed, so your AI no longer sees them. Confirm the ones that are still true and retire the rest."
+        : "Your AI saved facts that may contradict each other. Decide which one holds."),
+      h("div", { class: "panel" }, items));
+  } else if (a.checked_files) {
+    put(sec, head, h("div", { class: "panel calm" }, pip("active"),
+      h("span", {}, h("strong", {}, "Nothing to decide. "), "Every linked file still matches what its memory was based on.")));
+  } else {
+    put(sec, head, h("div", { class: "panel calm" }, pip("stale"),
+      h("span", {}, h("strong", {}, "Files not checked yet. "), "Use your AI tool in this repo once so the dashboard learns where it lives. After that, it checks files every time you open it.")));
+  }
+}
+
+function renderTabs() {
+  const p = state.projects.find((x) => x.name === state.project);
+  const c = p ? p.counts : { active: 0, stale: 0, retired: 0, superseded: 0 };
+  const tabs = [["any", "All", c.active + c.stale + c.retired + c.superseded], ["active", "Active", c.active],
+                ["stale", "Stale", c.stale], ["retired", "Retired", c.retired], ["superseded", "Replaced", c.superseded]];
+  put(document.getElementById("tabs"), tabs.map(([key, label, n]) =>
+    h("button", { type: "button", "aria-pressed": state.filter === key ? "true" : "false",
+                  onclick: () => { state.filter = key; renderTabs(); loadMemories().catch((e) => notify(e.message)); } },
+      label, h("span", { class: "n" }, n.toLocaleString()))));
+}
+
+function renderList() {
+  const list = document.getElementById("list");
+  if (!list) return;
+  renderTabs();
+  if (state.loadingList && !state.listLoaded) {
+    put(list, h("div", { class: "panel skeleton", "aria-busy": "true", "aria-label": "Loading memories" },
+      [72, 54, 64].map((w, i) => h("div", { class: "row", style: i ? "border-top:1px solid var(--rule)" : "" },
+        h("span"), h("span", { class: "bar" }), h("span", { class: "bar", style: `width:${w}%` }), h("span")))));
+    return;
+  }
+  if (!state.memories.length) {
+    const kind = state.filter === "any" ? "" : STATE_WORD[state.filter] + " ";
+    put(list, h("div", { class: "panel empty" }, state.q ? `No ${kind}memories match “${state.q}”.` : `No ${kind}memories in this project.`));
+    return;
+  }
+  put(list, h("div", { class: "panel" }, h("ol", { class: "memories", "aria-busy": state.loadingList ? "true" : "false" },
+    state.memories.map((m) => h("li", {},
+      h("button", { class: `row ${shown(m)}`, type: "button", "data-id": m.id,
+                    "aria-current": state.selected === m.id ? "true" : "false", onclick: () => openMemory(m.id) },
+        pip(shown(m)),
+        h("span", { class: "id mono" }, m.id),
+        h("span", {},
+          h("span", { class: "text" }, richText(m.text)),
+          m.files.length ? h("span", { class: "files" }, fingerprints(m.files)) : null),
+        h("span", { class: "side" },
+          h("span", { class: `word ${shown(m)}` }, STATE_WORD[shown(m)]), h("br"),
+          m.score !== undefined ? h("span", { class: "mono", title: "How close in meaning to your search" }, m.score.toFixed(2))
+                                : time(m.created_at))))))));
+}
+
+function renderDetail() {
+  const d = state.detail;
+  const aside = document.getElementById("detail");
+  if (!d) { put(aside); return; }
+  const actions = h("div", { class: "actions" });
+  if (d.status !== "active") {
+    const confirm = h("button", { class: "btn primary", type: "button",
+      onclick: () => act(confirm, "/api/confirm", { id: d.id }, `${d.id} is active again.`) }, "Still true");
+    actions.append(confirm);
+  } else {
+    actions.append(h("button", { class: "btn retire-trigger", type: "button", onclick: () => retireForm(d, actions) }, "Retire…"));
+  }
+  put(aside,
+    h("div", { class: "detail-head" },
+      pip(shown(d)), h("h2", { tabindex: "-1" }, d.id),
+      h("span", { class: `word ${shown(d)}`, style: "font-size:var(--t-xs)" }, STATE_WORD[shown(d)]),
+      h("button", { class: "btn icon-only", type: "button", onclick: closeDetail, "aria-label": "Close details" }, icon("close", 14))),
+    h("p", { class: "text" }, richText(d.text)),
+    h("dl", { class: "facts" },
+      h("dt", {}, "Saved by"), h("dd", {}, d.source, d.session ? h("span", { class: "muted" }, ", session ", h("span", { class: "mono" }, d.session)) : null),
+      h("dt", {}, "Saved"), h("dd", {}, exact(d.created_at)),
+      h("dt", {}, "Linked files"), h("dd", {}, d.files.length ? h("span", { class: "files" }, fingerprints(d.files)) : h("span", { class: "muted" }, "None"))),
+    actions,
+    h("h3", {}, "History"),
+    h("ol", { class: "timeline" }, d.history.map((e) => {
+      const [what, kind] = describe(e.event, e.details);
+      return h("li", {}, pip(kind),
+        h("div", {},
+          h("span", { class: "what" }, what), h("span", { class: "when" }, time(e.at)),
+          e.details ? h("p", { class: "details" }, pathNodes(e.details.replace(/\b([0-9a-f]{7})[0-9a-f]{33}\b/g, "$1"))) : null));
+    })));
+}
+
+function renderShell() {
+  const mark = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  mark.setAttribute("width", "18"); mark.setAttribute("height", "18"); mark.setAttribute("viewBox", "0 0 16 16"); mark.setAttribute("aria-hidden", "true");
+  mark.innerHTML = '<rect x="1" y="1" width="14" height="14" rx="3.5" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".55"/><circle cx="8" cy="8" r="3" fill="#3BBF8E"/>';
+  const search = h("input", { id: "search", type: "search", placeholder: "Search by meaning, like “how do we run tests”",
+                              "aria-label": "Search this project's memories by meaning", autocomplete: "off", spellcheck: "false" });
+  let timer;
+  search.addEventListener("input", () => {
+    clearTimeout(timer);
+    timer = setTimeout(() => { state.q = search.value.trim(); loadMemories().catch((e) => notify(e.message)); }, 280);
+  });
+  put(document.getElementById("root"), h("div", { class: "app" },
+    h("nav", { class: "rail", "aria-label": "Projects" },
+      h("div", { class: "wordmark" }, mark, "Aether Cache"),
+      h("h2", {}, "Projects"),
+      h("ul", { class: "projects", id: "projects" }),
+      h("div", { class: "engine", id: "engine", role: "status" })),
+    h("main", {}, h("div", { class: "page" },
+      h("div", { class: "page-head", id: "head" }),
+      h("section", { id: "attention", "aria-labelledby": "attention-h" }),
+      h("section", { "aria-labelledby": "mem-h" },
+        h("h2", { class: "section", id: "mem-h" }, "Memories"),
+        h("p", { class: "lede" }, "Everything your AI tools saved for this project. They only see the active ones."),
+        h("div", { class: "toolbar" }, h("div", { class: "search" }, icon("search", 15), search),
+          h("div", { class: "tabs", id: "tabs", role: "group", "aria-label": "Filter by status" })),
+        h("div", { id: "list" })))),
+    h("aside", { class: "detail", id: "detail", "aria-label": "Memory details" })));
+  renderEngine();
+}
+
+function renderBlocker(title, ...body) {
+  put(document.getElementById("root"), h("div", { class: "blocker" }, h("h1", {}, title), body));
+}
+
+document.addEventListener("keydown", (e) => { if (e.key === "Escape" && state.selected) closeDetail(); });
+
+// ---------- start ----------
+(async function start() {
+  if (!TOKEN) {
+    renderBlocker("Open the dashboard from your terminal",
+      h("p", {}, "For your security, this page only works when opened by ", h("code", {}, "aether-cache ui"), ", which gives it a one-time key."));
+    return;
+  }
+  try {
+    await loadProjects();
+  } catch (e) {
+    renderBlocker("Can’t load your memories", h("p", {}, e.message));
+    return;
+  }
+  if (!state.projects.length) {
+    renderBlocker("No memories yet",
+      h("p", {}, "Open your AI tool in any git repo and ask it to remember something, for example:"),
+      h("p", {}, h("code", {}, "Remember that our tests need DOCKER_HOST set. It depends on docker-compose.yml.")),
+      h("p", {}, "Then refresh this page."));
+    return;
+  }
+  renderShell();
+  renderProjects(); renderHead(); renderAttention(); renderList();
+  try { await refreshAll(); } catch (e) { notify(e.message); }
+})();
+</script>
+</body>
+</html>

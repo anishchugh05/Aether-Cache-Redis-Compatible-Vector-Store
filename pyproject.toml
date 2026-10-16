@@ -1,10 +1,10 @@
 [build-system]
-requires = ["setuptools>=64"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>=1.24"]
+build-backend = "hatchling.build"
 
 [project]
 name = "aether-cache"
-version = "0.1.0"
+version = "0.1.1"
 description = "Shared memory for AI coding tools that stays true to your code."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -21,8 +21,14 @@ Homepage = "https://github.com/anishchugh05/Aether-Cache-Redis-Compatible-Vector
 [project.scripts]
 aether-cache = "aether_cache.cli:main"
 
-[tool.setuptools]
+[tool.hatch.build.targets.wheel]
 packages = ["aether_cache"]
+artifacts = ["aether_cache/engine/aether-engine.jar"]  # *.jar is gitignored; ship this one anyway
 
-[tool.setuptools.package-data]
-aether_cache = ["engine/*.jar"]
+[tool.hatch.build.targets.sdist]
+include = ["aether_cache", "README.md", "pyproject.toml"]
+artifacts = ["aether_cache/engine/aether-engine.jar"]
+
+[tool.uv]
+# rebuild when the code changes, not only when this file does (uv's default for local installs)
+cache-keys = [{ file = "pyproject.toml" }, { file = "aether_cache/**/*.py" }, { file = "aether_cache/engine/*.jar" }, { file = "aether_cache/ui/*.html" }, { file = "aether_cache/ui/fonts/*" }]

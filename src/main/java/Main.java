@@ -1454,7 +1454,9 @@ public class Main {
     if (at == -1) at = System.currentTimeMillis();
 
     String old = m.status;
-    if (old.equals(status)) return "+OK\r\n"; // nothing changed, nothing to record
+    // Same status with no reason: nothing changed, nothing to record. Same status with a reason (e.g. retiring a
+    // memory that had already gone stale because its files changed) is still recorded, so the reason isn't lost.
+    if (old.equals(status) && reason.isEmpty()) return "+OK\r\n";
     m.status = status;
     m.history.add(new String[] {String.valueOf(at), old + " -> " + status, reason});
 

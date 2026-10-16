@@ -59,7 +59,7 @@ def cmd_setup(args) -> int:
           '  "Remember that our tests need DOCKER_HOST set. It depends on docker-compose.yml."\n'
           "Then, in a new session:\n"
           '  "How do I run the tests?"\n'
-          "\nCheck on things any time with `aether-cache status`.")
+          "\nSee and fix what your AI remembers any time with `aether-cache ui`.")
     return 0
 
 
@@ -220,6 +220,10 @@ def main(argv=None) -> None:
         func=lambda a: _tool_output("sync_to_files"))
     sub.add_parser("check", help="retire memories whose linked files changed").set_defaults(
         func=lambda a: _tool_output("check_stale"))
+    p = sub.add_parser("ui", help="open the dashboard: see and fix what your AI tools remember")
+    p.add_argument("--port", type=int, help="port for the dashboard (default 7381)")
+    p.add_argument("--no-open", action="store_true", help="don't open a browser, just print the link")
+    p.set_defaults(func=lambda a: __import__("aether_cache.ui", fromlist=["serve"]).serve(a.port, not a.no_open))
     sub.add_parser("serve", help="run the MCP server (your AI tool runs this for you)").set_defaults(func=cmd_serve)
 
     args = parser.parse_args(argv)

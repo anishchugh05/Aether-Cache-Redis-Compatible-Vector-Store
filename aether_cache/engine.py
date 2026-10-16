@@ -153,10 +153,36 @@ def _log_tail(lines: int = 15) -> str:
         return ""
 
 
+_fingerprint = None
+
+
+def jar_fingerprint() -> str:
+    """Identifies this version of the engine file, so a running engine from an older version can be spotted."""
+    global _fingerprint
+    if _fingerprint is None:
+        import hashlib
+        _fingerprint = hashlib.sha256(JAR.read_bytes()).hexdigest()[:16] if JAR.is_file() else ""
+    return _fingerprint
+
+
+def needs_upgrade() -> bool:
+    """True if the engine we started earlier came from a different engine file than this install's
+    (e.g. after `uv tool upgrade aether-cache`). Engines we didn't start are left alone."""
+    if running_pid() is None:
+        return False
+    try:
+        stamp = config.STAMP_FILE.read_text().strip()
+    except OSError:
+        stamp = ""  # started by a version from before stamps existed
+    return stamp != jar_fingerprint()
+
+
 def start(wait: float = 60) -> str:
-    """Starts the engine in the background (if it isn't already running) and waits until it answers."""
+    """Starts the engine in the background (if it isn't already running) and waits until it answers.
+    If the running engine is from an older install, restarts it on the new one (no data is lost:
+    every acknowledged write is already on disk)."""
     state = probe()
-    if state == "aether":
+    if state == "aether" and not needs_upgrade():
         return f"Engine already running on {config.HOST}:{config.PORT}."
     if state == "other":
         raise EngineError(port_taken_message())
@@ -166,10 +192,14 @@ def start(wait: float = 60) -> str:
     if not JAR.is_file():
         raise EngineError(f"The engine file is missing ({JAR}). Reinstall Aether Cache.")
 
+    upgraded = False
     with _start_lock():
         state = probe()  # another session may have started it while we waited for the lock
         if state == "aether":
-            return f"Engine already running on {config.HOST}:{config.PORT}."
+            if not needs_upgrade():
+                return f"Engine already running on {config.HOST}:{config.PORT}."
+            stop()
+            upgraded = True
         if state == "other":
             raise EngineError(port_taken_message())
         java, _ = find_java()
@@ -201,7 +231,9 @@ def start(wait: float = 60) -> str:
                                   + _log_tail())
             state = probe()
             if state == "aether":
-                started = f"Engine started on {config.HOST}:{config.PORT} (data in {config.DATA_DIR})."
+                config.STAMP_FILE.write_text(jar_fingerprint())
+                started = (f"Engine {'updated and restarted' if upgraded else 'started'} on {config.HOST}:{config.PORT} "
+                           f"(data in {config.DATA_DIR}).")
                 return f"{note}\n{started}" if note else started
             if state == "other":
                 process.terminate()
@@ -211,7 +243,7 @@ def start(wait: float = 60) -> str:
 
 
 def ensure_running() -> None:
-    if probe() != "aether":
+    if probe() != "aether" or needs_upgrade():
         start()
 
 

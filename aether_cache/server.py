@@ -170,9 +170,28 @@ def git_toplevel() -> Optional[Path]:
     return None
 
 
+REPO_KEY = "aether:repo:"  # aether:repo:<project> -> the repo's folder, so the dashboard can check its files
+_registered = set()
+
+
 def project_name() -> str:
     """The project memories belong to: AETHER_PROJECT, else the git repo's folder name, else this folder's."""
-    return config.project_override() or (git_toplevel() or workdir()).name
+    name = config.project_override() or (git_toplevel() or workdir()).name
+    _remember_repo_location(name)
+    return name
+
+
+def _remember_repo_location(project: str) -> None:
+    """Records where this project's repo lives (once per session), so `aether-cache ui`, which runs
+    from anywhere, can still check its memories' files. Best effort: never gets in the AI's way."""
+    top = git_toplevel()
+    if top is None or (project, str(top)) in _registered:
+        return
+    _registered.add((project, str(top)))
+    try:
+        db().set(REPO_KEY + project, str(top))
+    except Exception:
+        _registered.discard((project, str(top)))
 
 
 def repo_root() -> Path:
@@ -180,12 +199,12 @@ def repo_root() -> Path:
     return git_toplevel() or workdir()
 
 
-def relative(path: str) -> str:
+def relative(path: str, root: Optional[Path] = None) -> str:
     """Makes a path repo-relative, so memories still match if the repo is opened from a subfolder."""
     p = Path(path.strip())
     if p.is_absolute():
         try:
-            return p.resolve().relative_to(repo_root().resolve()).as_posix()
+            return p.resolve().relative_to((root or repo_root()).resolve()).as_posix()
         except ValueError:
             return str(p)
     return p.as_posix()
@@ -197,9 +216,9 @@ def blob_hash(path: Path) -> str:
     return hashlib.sha1(b"blob %d\0" % len(data) + data).hexdigest()
 
 
-def content_hashes(paths: List[str]) -> dict:
+def content_hashes(paths: List[str], root: Optional[Path] = None) -> dict:
     """path -> hash of the file's current contents, or "missing"."""
-    root = repo_root()
+    root = root or repo_root()
     result = {}
     for p in paths:
         try:
@@ -209,25 +228,28 @@ def content_hashes(paths: List[str]) -> dict:
     return result
 
 
-def link_files(paths: List[str]) -> str:
+def link_files(paths: List[str], root: Optional[Path] = None) -> str:
     """["a.py", "b.yml"] -> "a.py@<hash>,b.yml@<hash>": the files plus a snapshot of their contents."""
-    rel = [relative(p) for p in paths if p.strip()]
-    hashes = content_hashes(rel)
+    root = root or repo_root()
+    rel = [relative(p, root) for p in paths if p.strip()]
+    hashes = content_hashes(rel, root)
     return ",".join(f"{p}@{hashes[p]}" for p in rel)
 
 
-def check_staleness() -> List[str]:
+def check_staleness(project: Optional[str] = None, root: Optional[Path] = None) -> List[str]:
     """Marks active memories stale when a file they depend on has changed since they were saved.
-    Returns one line per memory that just went stale."""
+    Returns one line per memory that just went stale. Defaults to the current project and repo."""
+    project = project or project_name()
+    root = root or repo_root()
     newly_stale = []
     linked = []  # (id, text, [(path, saved hash)])
-    for mid, _status, files, text in run("MEM.LIST", project_name()):
+    for mid, _status, files, text in run("MEM.LIST", project):
         entries = [f.rsplit("@", 1) for f in files.split(",") if "@" in f]
         if entries:
             linked.append((mid, text, entries))
     if not linked:
         return newly_stale
-    current = content_hashes(sorted({path for _, _, entries in linked for path, _ in entries}))
+    current = content_hashes(sorted({path for _, _, entries in linked for path, _ in entries}), root)
     for mid, text, entries in linked:
         changed = [path for path, saved in entries if current.get(path) != saved]
         if changed:
@@ -235,6 +257,19 @@ def check_staleness() -> List[str]:
             run("MEM.STATUS", mid, "stale", "REASON", f"{what} since this was saved")
             newly_stale.append(f"[{mid}] \"{text}\" is now marked outdated: {what}.")
     return newly_stale
+
+
+def confirm(memory_id: str, root: Optional[Path] = None) -> Optional[bool]:
+    """Marks a memory still true and re-links it to the current versions of its files.
+    Returns whether it has linked files, or None if there's no such memory."""
+    r = run("MEM.GET", memory_id)
+    if r is None:
+        return None
+    files = [f.rsplit("@", 1)[0] for f in dict(zip(r[0::2], r[1::2]))["files"].split(",") if f]
+    if files:
+        run("MEM.FILES", memory_id, link_files(files, root), "REASON", "confirmed still true")
+    run("MEM.STATUS", memory_id, "active", "REASON", "confirmed still true")
+    return bool(files)
 
 
 # ---------- tools the AI can call ----------
@@ -363,16 +398,12 @@ def confirm_memory(memory_id: str) -> str:
     """Mark a memory as still true (e.g. after it was retired because a linked file changed, but the
     fact itself didn't). Re-links it to the current version of its files."""
     try:
-        r = run("MEM.GET", memory_id)
-        if r is None:
-            return f"No memory with id {memory_id}."
-        files = [f.rsplit("@", 1)[0] for f in dict(zip(r[0::2], r[1::2]))["files"].split(",") if f]
-        if files:
-            run("MEM.FILES", memory_id, link_files(files), "REASON", "confirmed still true")
-        run("MEM.STATUS", memory_id, "active", "REASON", "confirmed still true")
+        linked = confirm(memory_id)
     except EngineDown as e:
         return store_down(e)
-    return f"Confirmed {memory_id}; it's active again" + (" and linked to the current file versions." if files else ".")
+    if linked is None:
+        return f"No memory with id {memory_id}."
+    return f"Confirmed {memory_id}; it's active again" + (" and linked to the current file versions." if linked else ".")
 
 
 # ---------- syncing to AGENTS.md / CLAUDE.md ----------
