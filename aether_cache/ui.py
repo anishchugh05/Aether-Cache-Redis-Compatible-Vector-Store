@@ -19,6 +19,7 @@ from urllib.parse import parse_qs, urlparse
 import redis
 
 from . import __version__, config, engine, server
+from . import repos as repo_tools
 
 PAGE = Path(__file__).resolve().parent / "ui" / "index.html"
 FONTS = {f.name: f for f in (PAGE.parent / "fonts").glob("*.woff2")}  # only these files are ever served
@@ -120,11 +121,42 @@ def api_projects(_q, _body) -> dict:
         if status == "stale" and not last_reason(m["id"]).endswith(FILE_CHANGE):
             status = "retired"
         p["counts"][status] += 1
+    for name, repo in repos.items():  # added repos show up even before they have any memories
+        projects.setdefault(name, {"name": name, "counts": dict.fromkeys(STATUSES + ("retired",), 0)})
     for name, p in projects.items():
         repo = repos.get(name)
         p["repo"] = repo if repo and Path(repo).is_dir() else None
+        p["github"] = repo_tools.github_remote(Path(p["repo"])) if p["repo"] else None
     order = sorted(projects.values(), key=lambda p: (-p["counts"]["stale"], p["name"].lower()))
     return {"projects": order, "version": __version__}
+
+
+def api_discover(_q, _body) -> dict:
+    added = {str(Path(v).resolve()) for v in repo_locations().values() if Path(v).is_dir()}
+    found = repo_tools.discover()
+    for r in found:
+        r["added"] = str(Path(r["path"]).resolve()) in added
+        del r["modified"]
+    return {"repos": found}
+
+
+def api_add(_q, body) -> dict:
+    try:
+        return {"project": repo_tools.add(_need(body, "path"))}
+    except repo_tools.RepoError as e:
+        raise ApiError(400, str(e))
+
+
+def api_remove(_q, body) -> dict:
+    repo_tools.remove(_need(body, "name"))
+    return {"ok": True}
+
+
+def api_pick(_q, _body) -> dict:
+    try:
+        return {"path": repo_tools.pick_folder()}
+    except repo_tools.RepoError as e:
+        raise ApiError(501, str(e))
 
 
 def api_memories(q, _body) -> dict:
@@ -228,6 +260,10 @@ ROUTES = {
     ("POST", "/api/confirm"): api_confirm,
     ("POST", "/api/retire"): api_retire,
     ("POST", "/api/resolve"): api_resolve,
+    ("GET", "/api/discover"): api_discover,
+    ("POST", "/api/projects/add"): api_add,
+    ("POST", "/api/projects/remove"): api_remove,
+    ("POST", "/api/pick-folder"): api_pick,
 }
 
 

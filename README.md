@@ -112,6 +112,7 @@ the engine only accepts connections from it, and your memories live in `~/.aethe
 | Command | What it does |
 |---|---|
 | `aether-cache setup` | One-time setup: engine, model, and AI tools |
+| `aether-cache add` | Adds the repo you're in (or a path) so the dashboard can check its files; the dashboard can also find and add repos for you |
 | `aether-cache ui` | Opens the dashboard: see what your AI remembers, and confirm or retire memories whose files changed |
 | `aether-cache status` | Is it running, and what's in this project's memory |
 | `aether-cache doctor` | Checks everything and tells you how to fix what's wrong |

@@ -179,6 +179,22 @@ def _tool_output(name: str, *tool_args) -> int:
     return 0
 
 
+def cmd_add(args) -> int:
+    from . import repos
+    from .server import EngineDown, store_down
+    try:
+        engine.ensure_running()
+        added = repos.add(args.path)
+    except repos.RepoError as e:
+        print(e)
+        return 1
+    except (engine.EngineError, EngineDown) as e:
+        print(store_down(e))
+        return 1
+    print(f"Added {added['name']} ({added['path']})" + (f", github.com/{added['github']}" if added["github"] else "") + ".")
+    return 0
+
+
 def cmd_serve(args) -> int:
     from .server import serve
     serve()
@@ -220,6 +236,9 @@ def main(argv=None) -> None:
         func=lambda a: _tool_output("sync_to_files"))
     sub.add_parser("check", help="retire memories whose linked files changed").set_defaults(
         func=lambda a: _tool_output("check_stale"))
+    p = sub.add_parser("add", help="add a repo so the dashboard can check its files (default: this folder)")
+    p.add_argument("path", nargs="?", default=".")
+    p.set_defaults(func=cmd_add)
     p = sub.add_parser("ui", help="open the dashboard: see and fix what your AI tools remember")
     p.add_argument("--port", type=int, help="port for the dashboard (default 7381)")
     p.add_argument("--no-open", action="store_true", help="don't open a browser, just print the link")

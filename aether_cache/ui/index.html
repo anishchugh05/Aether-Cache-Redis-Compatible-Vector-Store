@@ -84,7 +84,8 @@ nav.rail {
 }
 .wordmark { display: flex; align-items: center; gap: 10px; padding: 18px 20px 22px; font-weight: 600; font-size: var(--t-md); letter-spacing: -0.01em; }
 .rail h2 { font-size: var(--t-xs); font-weight: 500; color: var(--rail-2); margin: 0 20px var(--s2); }
-.projects { list-style: none; margin: 0; padding: 0 10px; overflow-y: auto; flex: 1; }
+.projects { list-style: none; margin: 0; padding: 0 10px; overflow-y: auto; flex: 0 1 auto; }
+.projects:empty { display: none; }
 .project {
   display: block; width: 100%; text-align: left; border: 0; background: none; color: inherit; cursor: pointer;
   padding: 9px 10px; border-radius: 6px; transition: background-color 150ms ease;
@@ -93,7 +94,7 @@ nav.rail {
 .project .meta { display: block; font-size: var(--t-xs); color: var(--rail-2); }
 .project .meta .hot { color: var(--rail-stale); }
 .project[aria-current="true"] { background: var(--rail-active); }
-.engine { display: flex; align-items: center; gap: var(--s2); padding: 14px 20px; font-size: var(--t-xs); color: var(--rail-2); border-top: 1px solid var(--rail-active); }
+.engine { display: flex; align-items: center; gap: var(--s2); margin-top: auto; padding: 14px 20px; font-size: var(--t-xs); color: var(--rail-2); border-top: 1px solid var(--rail-active); }
 .engine .dot { width: 7px; height: 7px; border-radius: 50%; background: #3BBF8E; flex-shrink: 0; }
 .engine.down .dot { background: var(--rail-stale); }
 .engine .ver { margin-left: auto; font-family: var(--mono); }
@@ -252,6 +253,38 @@ ol.timeline .details { font-size: var(--t-sm); color: var(--ink-2); margin: 1px 
 .blocker p { color: var(--ink-2); }
 .blocker code { font-family: var(--mono); font-size: 0.9em; color: var(--ink); background: var(--surface); border: 1px solid var(--rule); padding: 2px 6px; border-radius: 4px; }
 
+/* ---------- add a project ---------- */
+.add-project {
+  display: flex; align-items: center; gap: 8px; width: calc(100% - 20px); margin: 6px 10px 12px; padding: 8px 10px;
+  border: 1px dashed color-mix(in srgb, var(--rail-2) 55%, transparent); border-radius: 6px; background: none;
+  color: var(--rail-ink); font-size: var(--t-sm); cursor: pointer; transition: background-color 150ms ease, border-color 150ms ease, transform 160ms var(--ease-out);
+}
+.add-project:active { transform: scale(0.98); }
+.add-project[aria-current="true"] { background: var(--rail-active); border-style: solid; border-color: var(--rail-active); }
+.source-tabs { margin-bottom: var(--s4); }
+.repo-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px; align-items: center; padding: 12px 16px; }
+.repo-row + .repo-row { border-top: 1px solid var(--rule); }
+.repo-row .name { font-weight: 500; overflow-wrap: anywhere; }
+.repo-row .where { display: block; font-size: var(--t-xs); color: var(--ink-2); overflow-wrap: break-word; }
+.repo-row .gh { display: block; font-size: var(--t-xs); color: var(--ink-2); }
+.added-word { font-size: var(--t-xs); font-weight: 600; color: var(--fresh); display: inline-flex; gap: 6px; align-items: center; }
+.path-form { display: flex; gap: var(--s2); flex-wrap: wrap; margin-top: 6px; }
+.path-label { display: block; margin-top: var(--s5); font-size: var(--t-sm); font-weight: 500; }
+.path-form input { flex: 1 1 280px; border: 1px solid var(--rule); border-radius: 6px; background: var(--surface); height: 34px; padding: 0 12px; font-family: var(--mono); font-size: var(--t-xs); }
+.path-form input:focus { outline: none; border-color: var(--focus); box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus) 20%, transparent); }
+.note { padding: 18px 20px; font-size: var(--t-sm); color: var(--ink-2); }
+.note p { margin: 0 0 10px; max-width: 70ch; } .note p:last-child { margin-bottom: 0; }
+.note .example { background: var(--surface-2); border-radius: 6px; padding: 10px 14px; color: var(--ink); font-size: var(--t-md); max-width: none; }
+.note strong { color: var(--ink); font-weight: 600; }
+.head-links { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: baseline; margin-top: 2px; font-size: var(--t-xs); color: var(--ink-2); }
+.head-links a { color: var(--ink-2); text-underline-offset: 3px; text-decoration-color: var(--rule); }
+.linkish { border: 0; background: none; padding: 0; color: var(--ink-2); font-size: var(--t-xs); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--rule); cursor: pointer; }
+[hidden] { display: none !important; }
+@media (hover: hover) and (pointer: fine) {
+  .add-project:hover { background: var(--rail-active); border-color: var(--rail-2); }
+  .head-links a:hover, .linkish:hover { color: var(--ink); text-decoration-color: currentColor; }
+}
+
 /* ---------- small screens ---------- */
 @media (max-width: 900px) {
   .app, .app.has-detail { grid-template-columns: 1fr; grid-template-rows: auto 1fr; height: auto; min-height: 100vh; }
@@ -260,6 +293,7 @@ ol.timeline .details { font-size: var(--t-sm); color: var(--ink-2); margin: 1px 
   .rail h2, .engine { display: none; }
   .projects { display: flex; gap: 4px; padding: 8px 8px 8px 0; overflow: visible; }
   .project { width: auto; max-width: 200px; padding: 6px 10px; }
+  .add-project { width: auto; margin: 0 8px 0 0; flex-shrink: 0; white-space: nowrap; }
   .page { padding: 20px 16px 56px; }
   .pair { grid-template-columns: 1fr; }
   aside.detail { position: fixed; inset: 0; z-index: 10; border-left: 0; }
@@ -300,6 +334,7 @@ const state = {
   projects: [], project: null, filter: "any", q: "",
   memories: [], attention: null, selected: null, detail: null,
   version: "", engineUp: true, loadingList: false, listLoaded: false,
+  view: "project", source: "local", discovered: null, discovering: false,
 };
 const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -329,6 +364,9 @@ function icon(name, size = 14) {
     search: '<circle cx="7" cy="7" r="4.75"/><path d="M10.5 10.5 14 14"/>',
     arrow: '<path d="M2 8h11M9.5 4.5 13 8l-3.5 3.5"/>',
     close: '<path d="M4 4l8 8M12 4l-8 8"/>',
+    plus: '<path d="M8 3v10M3 8h10"/>',
+    folder: '<path d="M2 4.5A1.5 1.5 0 0 1 3.5 3h2.6l1.5 1.5h4.9A1.5 1.5 0 0 1 14 6v5.5a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 2 11.5z"/>',
+    check: '<path d="M3 8.5 6.5 12 13 4.5"/>',
   };
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   svg.setAttribute("viewBox", "0 0 16 16"); svg.setAttribute("width", size); svg.setAttribute("height", size);
@@ -491,6 +529,7 @@ async function refreshAll() {
 }
 
 async function selectProject(name) {
+  showView("project");
   state.project = name; state.q = ""; state.filter = "any"; state.selected = null; state.detail = null;
   state.memories = []; state.listLoaded = false; state.attention = null;
   try { sessionStorage.setItem("aether-project", name); } catch (e) {}
@@ -498,6 +537,146 @@ async function selectProject(name) {
   const search = document.getElementById("search"); if (search) search.value = "";
   renderProjects(); renderHead(); renderAttention(); renderList();
   try { await refreshAll(); } catch (e) { notify(e.message); }
+}
+
+// ---------- add a project ----------
+function showView(view) {
+  state.view = view;
+  document.getElementById("project-view").hidden = view !== "project";
+  document.getElementById("add-view").hidden = view !== "add";
+  if (view === "add") document.querySelector(".app").classList.remove("has-detail");
+  renderProjects();
+}
+
+async function openAdd(firstRun) {
+  state.firstRun = !!firstRun;
+  showView("add");
+  renderAdd();
+  document.querySelector("#add-view h1")?.focus();
+  if (!state.discovered && !state.discovering) {
+    state.discovering = true;
+    try { state.discovered = (await api("/api/discover")).repos; }
+    catch (e) { state.discovered = []; notify(e.message); }
+    finally { state.discovering = false; renderAdd(); }
+  }
+}
+
+async function addRepo(path, button) {
+  if (button) button.disabled = true;
+  try {
+    const { project } = await api("/api/projects/add", { path });
+    notify(`Added ${project.name}.`);
+    if (state.discovered) {
+      const found = state.discovered.find((r) => r.path === project.path);
+      if (found) found.added = true;
+      else state.discovered.unshift({ name: project.name, path: project.path, github: project.github, added: true });
+    }
+    await loadProjects();
+    renderProjects();
+    renderAdd();
+    return project;
+  } catch (e) {
+    notify(e.message);
+    if (button) button.disabled = false;
+    return null;
+  }
+}
+
+async function chooseFolder(button) {
+  button.disabled = true;
+  try {
+    const { path } = await api("/api/pick-folder", {});
+    if (path) await addRepo(path);
+  } catch (e) {
+    notify(e.message);
+    document.getElementById("path-input")?.focus();
+  } finally {
+    button.disabled = false;
+  }
+}
+
+async function removeProject(name) {
+  try {
+    await api("/api/projects/remove", { name });
+    notify(`Removed ${name} from the dashboard.`);
+    if (state.discovered) state.discovered.forEach((r) => { if (r.name === name) r.added = false; });
+    state.project = null;
+    await loadProjects();
+    if (state.projects.length) await selectProject(state.projects[0].name); else openAdd(true);
+  } catch (e) { notify(e.message); }
+}
+
+function renderAdd() {
+  const view = document.getElementById("add-view");
+  const filter = state.addFilter || "";
+  const sourceTabs = h("div", { class: "tabs source-tabs", role: "group", "aria-label": "Where your repos are" },
+    [["local", "On this computer"], ["github", "GitHub"]].map(([key, label]) =>
+      h("button", { type: "button", "aria-pressed": state.source === key ? "true" : "false",
+                    onclick: () => { state.source = key; renderAdd(); } }, label)));
+
+  let body;
+  if (state.source === "github") {
+    body = h("div", { class: "panel note" },
+      h("p", {}, h("strong", {}, "GitHub is coming later. "), "Connecting GitHub will let a team share one project memory, and flag pull requests that would make memories stale before they merge."),
+      h("p", {}, "For now, add repos you’ve cloned on this computer. That’s where your AI tools actually work, so it’s where their memories live, and it means nothing ever leaves your machine."));
+  } else {
+    const pick = h("button", { class: "btn primary", type: "button", onclick: () => chooseFolder(pick) }, icon("folder", 14), " Choose a folder…");
+    pick.style.display = "inline-flex"; pick.style.alignItems = "center"; pick.style.gap = "6px";
+    const filterInput = h("input", { type: "search", placeholder: "Filter repos by name or folder", "aria-label": "Filter the repos found",
+                                     value: filter, autocomplete: "off", spellcheck: "false" });
+    filterInput.addEventListener("input", () => { state.addFilter = filterInput.value; renderRepoList(); });
+    const pathInput = h("input", { id: "path-input", type: "text", placeholder: "~/code/my-repo", spellcheck: "false" });
+    const addPath = h("button", { class: "btn", type: "button", onclick: async () => {
+      if (pathInput.value.trim() && await addRepo(pathInput.value.trim(), addPath)) pathInput.value = ""; } }, "Add path");
+    pathInput.addEventListener("keydown", (e) => { if (e.key === "Enter") addPath.click(); });
+    body = [
+      h("div", { class: "toolbar" }, h("div", { class: "search" }, icon("search", 15), filterInput), pick),
+      h("div", { id: "repo-list" }),
+      h("label", { class: "path-label", for: "path-input" }, "Or paste a project folder’s path"),
+      h("div", { class: "path-form" }, pathInput, addPath),
+    ];
+  }
+  put(view,
+    h("div", { class: "page-head" },
+      h("h1", { tabindex: "-1" }, state.firstRun ? "Pick the repos you work in" : "Add a project"),
+      h("p", { class: "lede", style: "margin-top:6px" }, state.firstRun
+        ? "Aether Cache keeps your AI tools’ memories per repo and checks them against the code. Add the repos you use with AI. Only their location is saved, and nothing leaves this computer."
+        : "Add a repo so its memories show up here and get checked against its files. Only its location is saved, and nothing leaves this computer.")),
+    sourceTabs, body);
+  if (state.source === "local") renderRepoList();
+}
+
+function renderRepoList() {
+  const box = document.getElementById("repo-list");
+  if (!box) return;
+  if (state.discovering || !state.discovered) {
+    put(box, h("div", { class: "panel skeleton", "aria-busy": "true", "aria-label": "Looking for git repos" },
+      h("p", { class: "note", style: "padding-bottom:0" }, "Looking for git repos in your usual code folders…"),
+      [60, 44, 52].map((w, i) => h("div", { class: "repo-row", style: i ? "border-top:1px solid var(--rule)" : "" },
+        h("span", {}, h("span", { class: "bar", style: `width:${w}%;margin-bottom:8px` }), h("span", { class: "bar", style: `width:${w + 20}%` })), h("span")))));
+    return;
+  }
+  const f = (state.addFilter || "").toLowerCase();
+  const repos = state.discovered.filter((r) => !f || r.name.toLowerCase().includes(f) || r.path.toLowerCase().includes(f));
+  if (!state.discovered.length) {
+    put(box, h("div", { class: "panel note" }, h("p", {}, h("strong", {}, "No git repos found "),
+      "in Desktop, Documents, Projects, Developer, code, or similar folders. Choose a folder, or paste its path below.")));
+    return;
+  }
+  if (!repos.length) { put(box, h("div", { class: "panel empty" }, `No repos match “${state.addFilter}”.`)); return; }
+  put(box, h("div", { class: "panel" }, h("div", { role: "list", "aria-label": `${plural(repos.length, "repo")} found` },
+    repos.map((r) => {
+      const add = h("button", { class: "btn", type: "button", onclick: () => addRepo(r.path, add) }, "Add");
+      return h("div", { class: "repo-row", role: "listitem" },
+        h("div", {},
+          h("span", { class: "name" }, r.name),
+          h("span", { class: "where mono" }, pathNodes(r.path.replace(/^\/Users\/[^/]+|^\/home\/[^/]+/, "~"))),
+          r.github ? h("span", { class: "gh" }, `github.com/${r.github}`) : null),
+        r.added
+          ? h("span", { class: "actions" }, h("span", { class: "added-word" }, icon("check", 13), "Added"),
+              h("button", { class: "btn", type: "button", onclick: () => selectProject(r.name) }, "Open"))
+          : add);
+    }))));
 }
 
 // ---------- actions ----------
@@ -555,18 +734,30 @@ function renderEngine() {
 function renderProjects() {
   put(document.getElementById("projects"), state.projects.map((p) => {
     const total = p.counts.active + p.counts.stale + p.counts.retired + p.counts.superseded;
-    return h("li", {}, h("button", { class: "project", type: "button", "aria-current": p.name === state.project ? "true" : "false",
+    return h("li", {}, h("button", { class: "project", type: "button", "aria-current": state.view === "project" && p.name === state.project ? "true" : "false",
                                      onclick: () => selectProject(p.name), title: p.name },
       h("span", { class: "name" }, p.name),
       h("span", { class: "meta" }, plural(total, "memory", "memories"),
         p.counts.stale ? [", ", h("span", { class: "hot" }, `${p.counts.stale} stale`)] : null)));
   }));
+  const heading = document.getElementById("projects-h");
+  if (heading) heading.hidden = !state.projects.length;
+  const add = document.getElementById("add-project");
+  if (add) add.setAttribute("aria-current", state.view === "add" ? "true" : "false");
 }
+
+const totalOf = (p) => p.counts.active + p.counts.stale + p.counts.retired + p.counts.superseded;
 
 function renderHead() {
   const p = state.projects.find((x) => x.name === state.project);
-  put(document.getElementById("head"), p ? [h("h1", {}, p.name),
-    h("span", { class: "repo mono" }, p.repo || "Repo location not known yet")] : null);
+  if (!p) { put(document.getElementById("head")); return; }
+  const remove = p.repo && totalOf(p) === 0
+    ? h("button", { class: "linkish", type: "button", onclick: () => removeProject(p.name) }, "Remove from dashboard") : null;
+  put(document.getElementById("head"), h("h1", {}, p.name),
+    h("div", { class: "head-links" },
+      h("span", { class: "mono" }, p.repo ? pathNodes(p.repo) : "Repo location not known yet"),
+      p.github ? h("a", { href: `https://github.com/${p.github}`, target: "_blank", rel: "noopener noreferrer" }, `github.com/${p.github}`) : null,
+      remove));
 }
 
 function renderAttention() {
@@ -626,6 +817,9 @@ function renderAttention() {
         ? "These went stale because files they depend on changed, so your AI no longer sees them. Confirm the ones that are still true and retire the rest."
         : "Your AI saved facts that may contradict each other. Decide which one holds."),
       h("div", { class: "panel" }, items));
+  } else if (state.projects.some((x) => x.name === state.project && totalOf(x) === 0)) {
+    put(sec, head, h("div", { class: "panel calm" }, pip("active"),
+      h("span", {}, h("strong", {}, "Nothing to decide yet. "), "When a file that a memory depends on changes, the memory shows up here.")));
   } else if (a.checked_files) {
     put(sec, head, h("div", { class: "panel calm" }, pip("active"),
       h("span", {}, h("strong", {}, "Nothing to decide. "), "Every linked file still matches what its memory was based on.")));
@@ -658,6 +852,14 @@ function renderList() {
   }
   if (!state.memories.length) {
     const kind = state.filter === "any" ? "" : STATE_WORD[state.filter] + " ";
+    const p = state.projects.find((x) => x.name === state.project);
+    if (p && totalOf(p) === 0 && !state.q) {
+      put(list, h("div", { class: "panel note" },
+        h("p", {}, h("strong", {}, "No memories yet. "), "Open your AI tool in this repo and ask it to remember something that a future session should know, for example:"),
+        h("p", { class: "example" }, "“Remember that our tests need DOCKER_HOST set. It depends on docker-compose.yml.”"),
+        h("p", {}, "It will show up here, and Aether Cache will flag it if docker-compose.yml changes.")));
+      return;
+    }
     put(list, h("div", { class: "panel empty" }, state.q ? `No ${kind}memories match “${state.q}”.` : `No ${kind}memories in this project.`));
     return;
   }
@@ -723,10 +925,11 @@ function renderShell() {
   put(document.getElementById("root"), h("div", { class: "app" },
     h("nav", { class: "rail", "aria-label": "Projects" },
       h("div", { class: "wordmark" }, mark, "Aether Cache"),
-      h("h2", {}, "Projects"),
+      h("h2", { id: "projects-h" }, "Projects"),
       h("ul", { class: "projects", id: "projects" }),
+      h("button", { class: "add-project", id: "add-project", type: "button", onclick: () => openAdd(false) }, icon("plus", 14), "Add project"),
       h("div", { class: "engine", id: "engine", role: "status" })),
-    h("main", {}, h("div", { class: "page" },
+    h("main", {}, h("div", { class: "page", id: "add-view", hidden: true }), h("div", { class: "page", id: "project-view" },
       h("div", { class: "page-head", id: "head" }),
       h("section", { id: "attention", "aria-labelledby": "attention-h" }),
       h("section", { "aria-labelledby": "mem-h" },
@@ -758,14 +961,8 @@ document.addEventListener("keydown", (e) => { if (e.key === "Escape" && state.se
     renderBlocker("Can’t load your memories", h("p", {}, e.message));
     return;
   }
-  if (!state.projects.length) {
-    renderBlocker("No memories yet",
-      h("p", {}, "Open your AI tool in any git repo and ask it to remember something, for example:"),
-      h("p", {}, h("code", {}, "Remember that our tests need DOCKER_HOST set. It depends on docker-compose.yml.")),
-      h("p", {}, "Then refresh this page."));
-    return;
-  }
   renderShell();
+  if (!state.projects.length) { renderProjects(); openAdd(true); return; }
   renderProjects(); renderHead(); renderAttention(); renderList();
   try { await refreshAll(); } catch (e) { notify(e.message); }
 })();
