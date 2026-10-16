@@ -1,0 +1,569 @@
+<!doctype html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link
+      href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Cpath d=%27M16 2 29 9 16 16 3 9 16 2Zm-13 14 13 7 13-7M3 23l13 7 13-7%27 fill=%27none%27 stroke=%27%2334594f%27 stroke-width=%272.3%27/%3E%3C/svg%3E"
+      rel="icon"
+    />
+    <meta content="width=device-width,initial-scale=1" name="viewport" />
+    <meta content="light dark" name="color-scheme" />
+    <meta
+      content="See how Aether Cache links memories to files, retires stale facts, preserves history, and runs entirely on your machine."
+      name="description"
+    />
+    <title>How it works — Aether Cache</title>
+    <script>
+      try {
+        const t = localStorage.getItem("aether-theme");
+        if (t === "light" || t === "dark")
+          document.documentElement.dataset.theme = t;
+      } catch (e) {}
+    </script>
+    <link href="assets/site.css" rel="stylesheet" />
+    <link
+      as="font"
+      crossorigin=""
+      href="assets/plex-sans.woff2"
+      rel="preload"
+      type="font/woff2"
+    />
+    <meta property="og:title" content="How it works — Aether Cache" />
+    <meta
+      property="og:description"
+      content="See how Aether Cache links memories to files, retires stale facts, preserves history, and runs entirely on your machine."
+    />
+    <meta property="og:type" content="website" />
+    <meta
+      property="og:url"
+      content="https://anishchugh05.github.io/Aether-Cache-Redis-Compatible-Vector-Store/how-it-works.html"
+    />
+    <meta
+      property="og:image"
+      content="https://anishchugh05.github.io/Aether-Cache-Redis-Compatible-Vector-Store/assets/og-image.png"
+    />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="Aether Cache. Memory that stays true to your code. A dashboard card shows a stale memory and the file versions behind it."
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="How it works — Aether Cache" />
+    <meta
+      name="twitter:description"
+      content="See how Aether Cache links memories to files, retires stale facts, preserves history, and runs entirely on your machine."
+    />
+    <meta
+      name="twitter:image"
+      content="https://anishchugh05.github.io/Aether-Cache-Redis-Compatible-Vector-Store/assets/og-image.png"
+    />
+    <meta
+      name="twitter:image:alt"
+      content="Aether Cache. Memory that stays true to your code. A stale-memory review card."
+    />
+  </head>
+  <body class="page-how-it-works">
+    <a class="skip" href="#main">Skip to content</a>
+    <div class="wrap">
+      <header class="masthead">
+        <a aria-label="Aether Cache home" class="brand" href="index.html"
+          ><svg
+            aria-hidden="true"
+            class="brand-mark"
+            fill="none"
+            viewBox="0 0 30 32"
+          >
+            <path
+              d="M15 2 28 9 15 16 2 9 15 2Z"
+              stroke="currentColor"
+              stroke-width="2"
+            ></path>
+            <path
+              d="m2 16 13 7 13-7M2 23l13 7 13-7"
+              stroke="currentColor"
+              stroke-width="2"
+            ></path></svg
+          >Aether Cache</a
+        >
+        <nav aria-label="Main navigation">
+          <a href="index.html">Home</a
+          ><a aria-current="page" href="how-it-works.html">How it works</a
+          ><a href="install.html">Install</a><a href="about.html">About</a>
+        </nav>
+        <button
+          aria-label="Switch color theme"
+          class="theme"
+          id="theme-toggle"
+          type="button"
+        >
+          <svg
+            aria-hidden="true"
+            fill="none"
+            height="17"
+            viewBox="0 0 20 20"
+            width="17"
+          >
+            <path
+              d="M16.7 12.6A7 7 0 0 1 7.4 3.3 7 7 0 1 0 16.7 12.6Z"
+              stroke="currentColor"
+              stroke-linejoin="round"
+              stroke-width="1.4"
+            ></path>
+          </svg>
+        </button>
+      </header>
+    </div>
+    <main id="main" tabindex="-1">
+      <header class="page-intro wrap">
+        <h1>One memory.<br />Entirely local.</h1>
+        <div>
+          <p>
+            Your tools connect through MCP. Aether Cache checks the files behind
+            each fact and keeps the record on your machine.
+          </p>
+          <a class="text-link" href="install.html"
+            >Set up your project
+            <svg
+              aria-hidden="true"
+              class="link-arrow"
+              fill="none"
+              height="20"
+              viewBox="0 0 20 20"
+              width="20"
+            >
+              <path
+                d="M3 10h13m-5-5 5 5-5 5"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.5"
+              ></path></svg
+          ></a>
+        </div>
+      </header>
+      <section
+        aria-label="Local system architecture"
+        class="section wrap architecture-section"
+        id="how-it-works"
+      >
+        <div class="architecture">
+          <div class="architecture-top">
+            <span>Your machine</span><span>Local connections only</span>
+          </div>
+          <svg
+            aria-labelledby="desktop-diagram-title"
+            class="desktop-diagram"
+            role="img"
+            viewBox="0 0 1100 245"
+          >
+            <title id="desktop-diagram-title">
+              Claude Code, Cursor, and Codex connect through MCP to Aether
+              Cache, which manages embeddings, git hashing, and file sync. The
+              Java engine stores memories, an HNSW index, and an append-only log
+              on disk. Everything runs on your machine.
+            </title>
+            <defs>
+              <marker
+                id="arrow"
+                markerheight="6"
+                markerwidth="6"
+                orient="auto-start-reverse"
+                refx="8"
+                refy="5"
+                viewbox="0 0 10 10"
+              >
+                <path d="M0 0 10 5 0 10" fill="var(--muted)"></path>
+              </marker>
+            </defs>
+            <rect
+              class="box"
+              height="48"
+              rx="3"
+              width="170"
+              x="0"
+              y="31"
+            ></rect>
+            <rect
+              class="box"
+              height="48"
+              rx="3"
+              width="170"
+              x="0"
+              y="99"
+            ></rect>
+            <rect
+              class="box"
+              height="48"
+              rx="3"
+              width="170"
+              x="0"
+              y="167"
+            ></rect>
+            <text font-size="16" x="20" y="61">Claude Code</text>
+            <text font-size="16" x="20" y="129">Cursor</text>
+            <text font-size="16" x="20" y="197">Codex</text>
+            <path class="connector" d="M170 55h30v136h-30M170 123h30"></path>
+            <path
+              class="connector"
+              d="M200 123h55"
+              marker-end="url(#arrow)"
+            ></path>
+            <rect
+              class="box"
+              height="48"
+              rx="3"
+              width="92"
+              x="257"
+              y="99"
+            ></rect>
+            <text font-size="16" x="281" y="129">MCP</text>
+            <path
+              class="connector"
+              d="M349 123h62"
+              marker-end="url(#arrow)"
+            ></path>
+            <rect
+              class="box"
+              height="184"
+              rx="3"
+              width="280"
+              x="414"
+              y="31"
+            ></rect>
+            <text font-size="21" x="438" y="68">Aether Cache</text>
+            <path class="connector" d="M438 87h232"></path>
+            <text class="svg-muted" font-size="15" x="438" y="119">
+              Embeddings
+            </text>
+            <text class="svg-muted" font-size="15" x="438" y="151">
+              Git content hashing
+            </text>
+            <text class="svg-muted" font-size="15" x="438" y="183">
+              AGENTS.md / CLAUDE.md sync
+            </text>
+            <path
+              class="connector"
+              d="M694 123h62"
+              marker-end="url(#arrow)"
+            ></path>
+            <rect
+              class="engine"
+              height="184"
+              rx="3"
+              width="340"
+              x="760"
+              y="31"
+            ></rect>
+            <text class="svg-blue" font-size="21" x="784" y="68">
+              Java engine
+            </text>
+            <path class="connector" d="M784 87h292"></path>
+            <text font-size="15" x="784" y="119">Memories + history</text>
+            <text font-size="15" x="784" y="151">HNSW vector index</text>
+            <text font-size="15" x="784" y="183">Append-only log → disk</text>
+          </svg>
+          <svg
+            aria-labelledby="mobile-diagram-title"
+            class="mobile-diagram"
+            role="img"
+            viewBox="0 0 310 480"
+          >
+            <title id="mobile-diagram-title">
+              All on your machine: Claude Code, Cursor, and Codex connect
+              through MCP to Aether Cache with embeddings, git hashing, and file
+              sync; then to the Java engine with memories, an HNSW index, and an
+              append-only log on disk.
+            </title>
+            <rect class="box" height="50" rx="3" width="308" x="1" y="1"></rect>
+            <text font-size="14" text-anchor="middle" x="155" y="31">
+              Claude Code · Cursor · Codex
+            </text>
+            <path class="connector" d="M155 51v30"></path>
+            <rect
+              class="box"
+              height="40"
+              rx="3"
+              width="86"
+              x="112"
+              y="81"
+            ></rect>
+            <text font-size="15" text-anchor="middle" x="155" y="107">MCP</text>
+            <path class="connector" d="M155 121v30m-4-5 4 5 4-5"></path>
+            <rect
+              class="box"
+              height="138"
+              rx="3"
+              width="308"
+              x="1"
+              y="151"
+            ></rect>
+            <text font-size="20" x="20" y="183">Aether Cache</text>
+            <text class="svg-muted" font-size="14" x="20" y="212">
+              Embeddings · Git content hashing
+            </text>
+            <text class="svg-muted" font-size="14" x="20" y="239">
+              AGENTS.md / CLAUDE.md sync
+            </text>
+            <text class="svg-muted" font-size="12" x="20" y="266">
+              Memory checked against your files
+            </text>
+            <path class="connector" d="M155 289v30m-4-5 4 5 4-5"></path>
+            <rect
+              class="engine"
+              height="159"
+              rx="3"
+              width="308"
+              x="1"
+              y="320"
+            ></rect>
+            <text class="svg-blue" font-size="20" x="20" y="355">
+              Java engine
+            </text>
+            <text font-size="14" x="20" y="389">Memories + history</text>
+            <text font-size="14" x="20" y="420">HNSW vector index</text>
+            <text font-size="14" x="20" y="451">Append-only log → disk</text>
+          </svg>
+        </div>
+        <p class="architecture-note">
+          Local connections only. Your code and memories never leave your
+          machine.
+        </p>
+      </section>
+      <section aria-labelledby="features-title" class="section features wrap">
+        <div class="section-lead">
+          <h2 id="features-title">
+            Every fact has a reason to stay.<br />And a reason to leave.
+          </h2>
+        </div>
+        <div class="feature-proofs">
+          <article class="feature-row">
+            <div>
+              <h3>It knows when a fact expires.</h3>
+              <p>
+                Each memory is linked to its files with a git content hash.
+                Change the file and the old memory is retired, with the reason
+                attached.
+              </p>
+            </div>
+            <div class="evidence">
+              <code>docker-compose.yml changed</code>
+              <div class="old">The database runs Postgres.</div>
+              <div class="small">m1 · outdated · linked file changed</div>
+            </div>
+          </article>
+          <article class="feature-row">
+            <div>
+              <h3>Contradictions replace. They don’t pile up.</h3>
+              <p>
+                “We migrated to MySQL” replaces “we use Postgres.” Your next
+                session gets the current decision, instead of two competing
+                answers.
+              </p>
+            </div>
+            <div class="evidence">
+              <div class="old">We use Postgres.</div>
+              <div class="new">We migrated to MySQL.</div>
+              <div class="small">Old memory retired · replacement recorded</div>
+            </div>
+          </article>
+        </div>
+        <div class="feature-support">
+          <article class="feature-row">
+            <div>
+              <h3>You can follow the whole history.</h3>
+              <p>
+                See which tool and session saved a memory, the file versions
+                behind it, and when it was created, went stale, was confirmed,
+                or was replaced.
+              </p>
+            </div>
+            <div class="evidence">
+              <code>m1 · Claude Code · session 01</code>
+              <div class="small">Created → went stale → replaced by m2</div>
+              <div class="small">
+                File versions and reasons stay in the record.
+              </div>
+            </div>
+          </article>
+          <article class="feature-row">
+            <div>
+              <h3>Different tools. The same context.</h3>
+              <p>
+                A fact saved in Claude Code is available in Cursor and Codex.
+                All three connect to the same project memory.
+              </p>
+            </div>
+            <div class="evidence">
+              <div class="tool-names">
+                <span>Claude Code</span><span>Cursor</span><span>Codex</span>
+              </div>
+              <code>recall("database setup")</code>
+              <div class="new">The database runs MySQL 8.</div>
+            </div>
+          </article>
+          <article class="feature-row">
+            <div>
+              <h3>Part of the repo. Private to your machine.</h3>
+              <p>
+                Sync memories into a managed section of AGENTS.md or CLAUDE.md,
+                then commit and review them in a PR. The engine accepts only
+                local connections; your code and memories go nowhere.
+              </p>
+            </div>
+            <div class="evidence">
+              <code># AGENTS.md</code>
+              <div class="small">Managed project memory</div>
+              <code>Tests need DOCKER_HOST set.</code>
+              <div class="small">
+                Linked to docker-compose.yml · reviewed with your code
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+      <section aria-labelledby="measurements-title" class="section wrap">
+        <div class="section-lead">
+          <h2 id="measurements-title">Measured, not promised.</h2>
+          <p>
+            The engine was measured against official Redis 8. The memory layer
+            also surfaced a useful limit: similarity is not the same as
+            agreement.
+          </p>
+        </div>
+        <div class="measurement-table">
+          <table>
+            <caption class="sr-only">
+              Reported measurements for Aether Cache
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">What was measured</th>
+                <th scope="col">Result</th>
+                <th scope="col">Context</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row">Redis throughput</th>
+                <td>
+                  <strong>88% SET, 93% GET</strong
+                  ><span>About 206K / 226K ops/sec</span>
+                </td>
+                <td>
+                  Compared with official Redis 8.<br />p50: 0.119 ms vs 0.111
+                  ms.
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">Vector search</th>
+                <td>
+                  <strong>99.4% recall@10</strong
+                  ><span>0.84 ms per search</span>
+                </td>
+                <td>
+                  100K real text embeddings.<br />22× faster than exact search.
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">Crash safety</th>
+                <td>
+                  <strong>0 acknowledged writes lost</strong
+                  ><span>0.6 s recovery</span>
+                </td>
+                <td>1,039,890 writes.<br />8 <code>kill -9</code> crashes.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="finding">
+          <div>
+            <h3>The contradiction looked more like a match.</h3>
+            <p>
+              Real duplicates scored 0.73–0.92 similarity. Changing an API
+              timeout from 30 to 60 seconds scored 0.94. That’s why Aether Cache
+              only auto-merges near-identical text and lets the AI judge whether
+              a new fact replaces an old one.
+            </p>
+          </div>
+          <div
+            aria-label="Similarity on a scale from zero to one. Real duplicates ranged from 0.73 to 0.92. The contradictory timeout statements scored 0.94, higher than the real duplicates."
+            class="plot"
+            role="img"
+          >
+            <div class="plot-head">
+              <span>Embedding similarity</span
+              ><span>Higher ≠ more correct</span>
+            </div>
+            <div class="plot-label">
+              <span>Real duplicates</span><span>0.73–0.92</span>
+            </div>
+            <div class="plot-track"><span class="plot-range"></span></div>
+            <div class="plot-label">
+              <span>Contradictory facts</span><span>0.94</span>
+            </div>
+            <div class="plot-track"><span class="plot-point"></span></div>
+            <div class="plot-ticks">
+              <span>0.0</span><span>0.5</span><span>1.0</span>
+            </div>
+            <div class="plot-example">
+              “API timeout is 30 seconds”<br />“API timeout is 60 seconds”
+            </div>
+          </div>
+        </div>
+        <p class="measurement-note">
+          Reported measurements, not a guarantee for every workload.
+          <a
+            href="https://github.com/anishchugh05/Aether-Cache-Redis-Compatible-Vector-Store"
+            >Inspect the project on GitHub.</a
+          >
+        </p>
+      </section>
+      <div class="wrap">
+        <div class="closing">
+          <div>
+            <h2>See it in your own project.</h2>
+            <p>Start with a fact worth remembering.</p>
+          </div>
+          <a class="button" href="install.html"
+            >Install Aether Cache<svg
+              aria-hidden="true"
+              class="link-arrow"
+              fill="none"
+              height="20"
+              viewBox="0 0 20 20"
+              width="20"
+            >
+              <path
+                d="M3 10h13m-5-5 5 5-5 5"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.5"
+              ></path></svg
+          ></a>
+        </div>
+      </div>
+    </main>
+    <div class="wrap">
+      <footer class="footer">
+        <span>Built by Anish Chugh.</span>
+        <div class="footer-links">
+          <a
+            href="https://github.com/anishchugh05/Aether-Cache-Redis-Compatible-Vector-Store"
+            >GitHub</a
+          ><a href="https://pypi.org/project/aether-cache/">PyPI</a
+          ><span>Aether Cache v0.1.2</span>
+        </div>
+      </footer>
+    </div>
+    <div
+      aria-live="polite"
+      class="sr-only"
+      id="copy-status"
+      role="status"
+    ></div>
+    <script defer="" src="assets/site.js"></script>
+  </body>
+</html>

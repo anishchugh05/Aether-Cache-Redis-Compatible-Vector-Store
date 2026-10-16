@@ -16,7 +16,8 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/anishchugh05/Aether-Cache-Redis-Compatible-Vector-Store"
+Homepage = "https://anishchugh05.github.io/Aether-Cache-Redis-Compatible-Vector-Store/"
+Repository = "https://github.com/anishchugh05/Aether-Cache-Redis-Compatible-Vector-Store"
 
 [project.scripts]
 aether-cache = "aether_cache.cli:main"

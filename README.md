@@ -4,6 +4,8 @@
 
 **Shared memory for AI coding tools that stays true to your code.**
 
+**[Website](https://anishchugh05.github.io/Aether-Cache-Redis-Compatible-Vector-Store/)** · **[PyPI](https://pypi.org/project/aether-cache/)**
+
 Claude Code, Cursor, and other AI tools each forget your project between sessions, and when they do remember things,
 nothing checks whether those memories are still correct. Aether Cache gives every tool one shared, local memory, and keeps
 it honest:

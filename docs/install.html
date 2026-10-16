@@ -1,0 +1,288 @@
+<!doctype html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link
+      href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Cpath d=%27M16 2 29 9 16 16 3 9 16 2Zm-13 14 13 7 13-7M3 23l13 7 13-7%27 fill=%27none%27 stroke=%27%2334594f%27 stroke-width=%272.3%27/%3E%3C/svg%3E"
+      rel="icon"
+    />
+    <meta content="width=device-width,initial-scale=1" name="viewport" />
+    <meta content="light dark" name="color-scheme" />
+    <meta
+      content="Install Aether Cache locally with Java and uv, connect Claude Code, Cursor, and Codex, and save your first project memory."
+      name="description"
+    />
+    <title>Install — Aether Cache</title>
+    <script>
+      try {
+        const t = localStorage.getItem("aether-theme");
+        if (t === "light" || t === "dark")
+          document.documentElement.dataset.theme = t;
+      } catch (e) {}
+    </script>
+    <link href="assets/site.css" rel="stylesheet" />
+    <link
+      as="font"
+      crossorigin=""
+      href="assets/plex-sans.woff2"
+      rel="preload"
+      type="font/woff2"
+    />
+    <meta property="og:title" content="Install — Aether Cache" />
+    <meta
+      property="og:description"
+      content="Install Aether Cache locally with Java and uv, connect Claude Code, Cursor, and Codex, and save your first project memory."
+    />
+    <meta property="og:type" content="website" />
+    <meta
+      property="og:url"
+      content="https://anishchugh05.github.io/Aether-Cache-Redis-Compatible-Vector-Store/install.html"
+    />
+    <meta
+      property="og:image"
+      content="https://anishchugh05.github.io/Aether-Cache-Redis-Compatible-Vector-Store/assets/og-image.png"
+    />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="Aether Cache. Memory that stays true to your code. A dashboard card shows a stale memory and the file versions behind it."
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Install — Aether Cache" />
+    <meta
+      name="twitter:description"
+      content="Install Aether Cache locally with Java and uv, connect Claude Code, Cursor, and Codex, and save your first project memory."
+    />
+    <meta
+      name="twitter:image"
+      content="https://anishchugh05.github.io/Aether-Cache-Redis-Compatible-Vector-Store/assets/og-image.png"
+    />
+    <meta
+      name="twitter:image:alt"
+      content="Aether Cache. Memory that stays true to your code. A stale-memory review card."
+    />
+  </head>
+  <body class="page-install">
+    <a class="skip" href="#main">Skip to content</a>
+    <div class="wrap">
+      <header class="masthead">
+        <a aria-label="Aether Cache home" class="brand" href="index.html"
+          ><svg
+            aria-hidden="true"
+            class="brand-mark"
+            fill="none"
+            viewBox="0 0 30 32"
+          >
+            <path
+              d="M15 2 28 9 15 16 2 9 15 2Z"
+              stroke="currentColor"
+              stroke-width="2"
+            ></path>
+            <path
+              d="m2 16 13 7 13-7M2 23l13 7 13-7"
+              stroke="currentColor"
+              stroke-width="2"
+            ></path></svg
+          >Aether Cache</a
+        >
+        <nav aria-label="Main navigation">
+          <a href="index.html">Home</a
+          ><a href="how-it-works.html">How it works</a
+          ><a aria-current="page" href="install.html">Install</a
+          ><a href="about.html">About</a>
+        </nav>
+        <button
+          aria-label="Switch color theme"
+          class="theme"
+          id="theme-toggle"
+          type="button"
+        >
+          <svg
+            aria-hidden="true"
+            fill="none"
+            height="17"
+            viewBox="0 0 20 20"
+            width="17"
+          >
+            <path
+              d="M16.7 12.6A7 7 0 0 1 7.4 3.3 7 7 0 1 0 16.7 12.6Z"
+              stroke="currentColor"
+              stroke-linejoin="round"
+              stroke-width="1.4"
+            ></path>
+          </svg>
+        </button>
+      </header>
+    </div>
+    <main id="main" tabindex="-1">
+      <section
+        aria-labelledby="install-title"
+        class="section install-section install-page"
+        id="install"
+      >
+        <div class="wrap install-grid">
+          <div class="install-intro">
+            <h1 id="install-title">Start with your next session.</h1>
+            <p>
+              Install once. Connect your tools.<br />Start with a fact worth
+              remembering.
+            </p>
+            <div class="install-version">
+              v0.1.2, available on
+              <a href="https://pypi.org/project/aether-cache/">PyPI</a>
+            </div>
+            <p class="setup-note">
+              Everything runs on your machine. No account to create, no hosted
+              memory service to configure.
+            </p>
+          </div>
+          <div class="install-content">
+            <div class="install-step">
+              <span aria-hidden="true" class="step-number">1</span>
+              <div>
+                <h2 class="install-step-title">A couple of prerequisites</h2>
+                <div class="prereq">
+                  <div class="prereq-row">
+                    <strong>Java 11+</strong
+                    ><a href="https://adoptium.net/">Any OS: adoptium.net</a>
+                    <p>On macOS:</p>
+                    <div class="code-block">
+                      <pre>brew install openjdk@21</pre>
+                      <button
+                        aria-label="Copy Java install command"
+                        class="copy-button"
+                        data-copy="brew install openjdk@21"
+                      >
+                        Copy
+                      </button>
+                    </div>
+                  </div>
+                  <div class="prereq-row">
+                    <strong>uv</strong>
+                    <div class="code-block">
+                      <pre>curl -LsSf https://astral.sh/uv/install.sh | sh</pre>
+                      <button
+                        aria-label="Copy uv install command"
+                        class="copy-button"
+                        data-copy="curl -LsSf https://astral.sh/uv/install.sh | sh"
+                      >
+                        Copy
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="install-step">
+              <span aria-hidden="true" class="step-number">2</span>
+              <div>
+                <h2 class="install-step-title">Install and connect</h2>
+                <div class="code-block install-main">
+                  <pre>
+uv tool install aether-cache
+aether-cache setup</pre>
+                  <button
+                    aria-label="Copy Aether Cache install and setup commands"
+                    class="copy-button"
+                    data-copy="uv tool install aether-cache
+aether-cache setup"
+                  >
+                    Copy
+                  </button>
+                </div>
+                <p>
+                  Setup starts the engine in the background, downloads the
+                  embedding model once (~90 MB), and connects Claude Code,
+                  Cursor, and Codex automatically.
+                </p>
+              </div>
+            </div>
+            <div class="install-step">
+              <span aria-hidden="true" class="step-number">3</span>
+              <div>
+                <h2 class="install-step-title">
+                  Give it something to remember
+                </h2>
+                <p>Open your AI tool in any project folder and say:</p>
+                <blockquote class="prompt-quote">
+                  Remember that our tests need DOCKER_HOST set. It depends on
+                  docker-compose.yml.
+                </blockquote>
+              </div>
+            </div>
+            <ul aria-label="Useful commands" class="command-list">
+              <li>
+                <code>aether-cache ui</code
+                ><span>Open the dashboard to review and fix memories.</span>
+              </li>
+              <li>
+                <code>aether-cache add</code
+                ><span
+                  >Add the project you're in so the dashboard checks its
+                  files.</span
+                >
+              </li>
+              <li>
+                <code>aether-cache status</code><span>See what’s running.</span>
+              </li>
+              <li>
+                <code>aether-cache doctor</code
+                ><span>Check everything and see how to fix problems.</span>
+              </li>
+              <li>
+                <code>aether-cache list</code
+                ><span>Inspect your saved memories.</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+      <div class="wrap">
+        <div class="closing">
+          <div>
+            <h2>Want to look under the hood?</h2>
+            <p>Follow the path from your AI tool to the bytes on disk.</p>
+          </div>
+          <a class="button" href="how-it-works.html"
+            >How it works<svg
+              aria-hidden="true"
+              class="link-arrow"
+              fill="none"
+              height="20"
+              viewBox="0 0 20 20"
+              width="20"
+            >
+              <path
+                d="M3 10h13m-5-5 5 5-5 5"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.5"
+              ></path></svg
+          ></a>
+        </div>
+      </div>
+    </main>
+    <div class="wrap">
+      <footer class="footer">
+        <span>Built by Anish Chugh.</span>
+        <div class="footer-links">
+          <a
+            href="https://github.com/anishchugh05/Aether-Cache-Redis-Compatible-Vector-Store"
+            >GitHub</a
+          ><a href="https://pypi.org/project/aether-cache/">PyPI</a
+          ><span>Aether Cache v0.1.2</span>
+        </div>
+      </footer>
+    </div>
+    <div
+      aria-live="polite"
+      class="sr-only"
+      id="copy-status"
+      role="status"
+    ></div>
+    <script defer="" src="assets/site.js"></script>
+  </body>
+</html>

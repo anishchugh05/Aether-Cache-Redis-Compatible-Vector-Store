@@ -1,0 +1,402 @@
+<!doctype html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link
+      href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Cpath d=%27M16 2 29 9 16 16 3 9 16 2Zm-13 14 13 7 13-7M3 23l13 7 13-7%27 fill=%27none%27 stroke=%27%2334594f%27 stroke-width=%272.3%27/%3E%3C/svg%3E"
+      rel="icon"
+    />
+    <meta content="width=device-width,initial-scale=1" name="viewport" />
+    <meta content="light dark" name="color-scheme" />
+    <meta
+      content="Shared memory for Claude Code, Cursor, and Codex. Local, open source, and checked against your code."
+      name="description"
+    />
+    <title>Aether Cache — Memory that stays true to your code</title>
+    <script>
+      try {
+        const t = localStorage.getItem("aether-theme");
+        if (t === "light" || t === "dark")
+          document.documentElement.dataset.theme = t;
+      } catch (e) {}
+    </script>
+    <link href="assets/site.css" rel="stylesheet" />
+    <link
+      as="font"
+      crossorigin=""
+      href="assets/plex-sans.woff2"
+      rel="preload"
+      type="font/woff2"
+    />
+    <meta
+      property="og:title"
+      content="Aether Cache — Memory that stays true to your code"
+    />
+    <meta
+      property="og:description"
+      content="Shared memory for Claude Code, Cursor, and Codex. Local, open source, and checked against your code."
+    />
+    <meta property="og:type" content="website" />
+    <meta
+      property="og:url"
+      content="https://anishchugh05.github.io/Aether-Cache-Redis-Compatible-Vector-Store/"
+    />
+    <meta
+      property="og:image"
+      content="https://anishchugh05.github.io/Aether-Cache-Redis-Compatible-Vector-Store/assets/og-image.png"
+    />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="Aether Cache. Memory that stays true to your code. A dashboard card shows a stale memory and the file versions behind it."
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta
+      name="twitter:title"
+      content="Aether Cache — Memory that stays true to your code"
+    />
+    <meta
+      name="twitter:description"
+      content="Shared memory for Claude Code, Cursor, and Codex. Local, open source, and checked against your code."
+    />
+    <meta
+      name="twitter:image"
+      content="https://anishchugh05.github.io/Aether-Cache-Redis-Compatible-Vector-Store/assets/og-image.png"
+    />
+    <meta
+      name="twitter:image:alt"
+      content="Aether Cache. Memory that stays true to your code. A stale-memory review card."
+    />
+  </head>
+  <body class="page-index">
+    <a class="skip" href="#main">Skip to content</a>
+    <div class="wrap">
+      <header class="masthead">
+        <a aria-label="Aether Cache home" class="brand" href="index.html"
+          ><svg
+            aria-hidden="true"
+            class="brand-mark"
+            fill="none"
+            viewBox="0 0 30 32"
+          >
+            <path
+              d="M15 2 28 9 15 16 2 9 15 2Z"
+              stroke="currentColor"
+              stroke-width="2"
+            ></path>
+            <path
+              d="m2 16 13 7 13-7M2 23l13 7 13-7"
+              stroke="currentColor"
+              stroke-width="2"
+            ></path></svg
+          >Aether Cache</a
+        >
+        <nav aria-label="Main navigation">
+          <a aria-current="page" href="index.html">Home</a
+          ><a href="how-it-works.html">How it works</a
+          ><a href="install.html">Install</a><a href="about.html">About</a>
+        </nav>
+        <button
+          aria-label="Switch color theme"
+          class="theme"
+          id="theme-toggle"
+          type="button"
+        >
+          <svg
+            aria-hidden="true"
+            fill="none"
+            height="17"
+            viewBox="0 0 20 20"
+            width="17"
+          >
+            <path
+              d="M16.7 12.6A7 7 0 0 1 7.4 3.3 7 7 0 1 0 16.7 12.6Z"
+              stroke="currentColor"
+              stroke-linejoin="round"
+              stroke-width="1.4"
+            ></path>
+          </svg>
+        </button>
+      </header>
+    </div>
+    <main id="main" tabindex="-1">
+      <section aria-labelledby="hero-title" class="hero wrap">
+        <div class="hero-copy">
+          <h1 id="hero-title">Memory that stays true to your code.</h1>
+          <div class="hero-aside">
+            <p>
+              Shared memory for Claude Code, Cursor, and Codex. Linked to your
+              files, and checked when the code changes.
+            </p>
+            <div class="hero-actions">
+              <a class="button" href="install.html"
+                >Install
+                <svg
+                  aria-hidden="true"
+                  fill="none"
+                  height="14"
+                  viewBox="0 0 13 14"
+                  width="13"
+                >
+                  <path
+                    d="M6.5 1v11m-4-4 4 4 4-4"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                  ></path></svg></a
+              ><a
+                class="text-link"
+                href="https://github.com/anishchugh05/Aether-Cache-Redis-Compatible-Vector-Store"
+                >View on GitHub</a
+              >
+            </div>
+          </div>
+          <div class="hero-foot">
+            <span>Open source, v0.1.2. Runs entirely on your machine.</span>
+          </div>
+        </div>
+        <div class="hero-demo">
+          <div
+            aria-label="Interactive demonstration of a memory becoming outdated"
+            class="workbench"
+          >
+            <div class="bench-bar">
+              <span class="bench-title"
+                >A change in code. A change in memory.</span
+              ><span id="session-label">Claude Code · session 01</span>
+            </div>
+            <div class="bench-body">
+              <div class="terminal">
+                <div class="pane-label">
+                  <span id="terminal-label">The first session</span>
+                </div>
+                <pre
+                  id="demo-command"
+                ><span class="prompt">&gt; </span>remember("The database runs Postgres via docker compose", files=["docker-compose.yml"])</pre>
+                <div class="code-output" id="demo-output">Saved as m1.</div>
+                <div class="file-diff">
+                  <div class="file-title">
+                    <span>docker-compose.yml</span
+                    ><span id="file-state">saved version</span>
+                  </div>
+                  <div class="diff-code" id="diff-code">
+                    <span class="diff-line"> services:</span
+                    ><span class="diff-line"> db:</span
+                    ><span class="diff-line"> image: postgres:16</span>
+                  </div>
+                </div>
+              </div>
+              <div class="inspector">
+                <div class="memory-record">
+                  <div class="memory-heading">
+                    <code id="memory-id">m1</code
+                    ><span class="badge" id="memory-status">Active</span>
+                  </div>
+                  <p class="memory-copy" id="memory-copy">
+                    The database runs Postgres via docker compose
+                  </p>
+                  <div class="memory-meta" id="memory-meta">
+                    Linked to <code>docker-compose.yml</code> · git content hash
+                  </div>
+                </div>
+                <ol class="history" id="history">
+                  <li class="current">
+                    Created<span>Claude Code · session 01</span>
+                  </li>
+                </ol>
+              </div>
+            </div>
+            <div class="bench-bottom">
+              <div
+                aria-hidden="true"
+                class="step-indicator"
+                id="step-indicator"
+              >
+                <i class="filled"></i><i></i><i></i><i></i
+                ><span>1 of 4 · Remember</span>
+              </div>
+              <div class="controls">
+                <button class="plain-button" id="pause" type="button">
+                  Pause</button
+                ><button class="plain-button" id="replay" type="button">
+                  Replay</button
+                ><button class="small-button" id="next" type="button">
+                  Edit the file
+                </button>
+              </div>
+            </div>
+          </div>
+          <p class="demo-caption">
+            An illustrative demo. Make a change and follow the memory.
+          </p>
+        </div>
+        <div
+          aria-atomic="true"
+          aria-live="polite"
+          class="sr-only"
+          id="demo-announcement"
+          role="status"
+        ></div>
+      </section>
+      <section class="dashboard-section wrap" aria-labelledby="dashboard-title">
+        <div class="section-lead">
+          <h2 id="dashboard-title">See and fix what your AI remembers.</h2>
+          <p>
+            Run <code>aether-cache ui</code> to open your projects in the
+            browser. Memories whose files changed are waiting for a decision,
+            with the exact file versions side by side. Confirm the ones that are
+            still true, retire the rest, and settle facts that contradict each
+            other.
+          </p>
+        </div>
+        <figure class="dashboard-window">
+          <figcaption class="dashboard-window-bar">
+            <span>Aether Cache dashboard</span><span>On your machine</span>
+          </figcaption>
+          <picture data-theme-picture>
+            <source
+              data-dark-source
+              data-mobile-source
+              media="(max-width: 600px) and (prefers-color-scheme: dark)"
+              srcset="assets/stale-card-dark.png 2x"
+              width="860"
+              height="618"
+            />
+            <source
+              media="(max-width: 600px)"
+              srcset="assets/stale-card-light.png 2x"
+              width="860"
+              height="618"
+            />
+            <source
+              data-dark-source
+              media="(prefers-color-scheme: dark)"
+              srcset="assets/dashboard-dark.png 2x"
+            />
+            <img
+              id="dashboard-image"
+              src="assets/dashboard-light.png"
+              srcset="assets/dashboard-light.png 2x"
+              width="1440"
+              height="900"
+              loading="lazy"
+              decoding="async"
+              alt="Aether Cache dashboard showing two memories flagged as stale because docker-compose.yml and ci.yml changed, with saved and current file versions, plus one possible contradiction to resolve."
+            />
+          </picture>
+        </figure>
+        <div class="code-block dashboard-command">
+          <pre>aether-cache ui</pre>
+          <button
+            type="button"
+            class="copy-button"
+            data-copy="aether-cache ui"
+            aria-label="Copy dashboard command"
+          >
+            Copy
+          </button>
+        </div>
+      </section>
+      <section aria-labelledby="explore-title" class="home-directory wrap">
+        <div class="directory-intro">
+          <h2 id="explore-title">
+            A little context.<br />A lot less repetition.
+          </h2>
+          <p>
+            Move between Claude Code, Cursor, and Codex with the same project
+            memory. Keep the decisions that still hold. Retire the ones that
+            don’t.
+          </p>
+          <span class="directory-note"
+            >Local by design. Open source from the start.</span
+          >
+        </div>
+        <div class="directory-links">
+          <a href="how-it-works.html"
+            ><div>
+              <h3>How it works</h3>
+              <p>From a saved fact to a checked, traceable memory.</p>
+            </div>
+            <svg
+              aria-hidden="true"
+              class="link-arrow"
+              fill="none"
+              height="20"
+              viewBox="0 0 20 20"
+              width="20"
+            >
+              <path
+                d="M3 10h13m-5-5 5 5-5 5"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.5"
+              ></path></svg
+          ></a>
+          <a href="about.html"
+            ><div>
+              <h3>The idea behind it</h3>
+              <p>Why useful memory needs a way to forget.</p>
+            </div>
+            <svg
+              aria-hidden="true"
+              class="link-arrow"
+              fill="none"
+              height="20"
+              viewBox="0 0 20 20"
+              width="20"
+            >
+              <path
+                d="M3 10h13m-5-5 5 5-5 5"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.5"
+              ></path></svg
+          ></a>
+          <a href="install.html"
+            ><div>
+              <h3>Make it part of your workflow</h3>
+              <p>Install locally and connect your tools.</p>
+            </div>
+            <svg
+              aria-hidden="true"
+              class="link-arrow"
+              fill="none"
+              height="20"
+              viewBox="0 0 20 20"
+              width="20"
+            >
+              <path
+                d="M3 10h13m-5-5 5 5-5 5"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.5"
+              ></path></svg
+          ></a>
+        </div>
+      </section>
+    </main>
+    <div class="wrap">
+      <footer class="footer">
+        <span>Built by Anish Chugh.</span>
+        <div class="footer-links">
+          <a
+            href="https://github.com/anishchugh05/Aether-Cache-Redis-Compatible-Vector-Store"
+            >GitHub</a
+          ><a href="https://pypi.org/project/aether-cache/">PyPI</a
+          ><span>Aether Cache v0.1.2</span>
+        </div>
+      </footer>
+    </div>
+    <div
+      aria-live="polite"
+      class="sr-only"
+      id="copy-status"
+      role="status"
+    ></div>
+    <script defer="" src="assets/site.js"></script>
+  </body>
+</html>

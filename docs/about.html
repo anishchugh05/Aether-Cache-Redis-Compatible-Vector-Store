@@ -1,0 +1,287 @@
+<!doctype html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link
+      href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Cpath d=%27M16 2 29 9 16 16 3 9 16 2Zm-13 14 13 7 13-7M3 23l13 7 13-7%27 fill=%27none%27 stroke=%27%2334594f%27 stroke-width=%272.3%27/%3E%3C/svg%3E"
+      rel="icon"
+    />
+    <meta content="width=device-width,initial-scale=1" name="viewport" />
+    <meta content="light dark" name="color-scheme" />
+    <meta
+      content="The idea behind Aether Cache: project memory that can explain when a fact is still useful, when it changed, and why it was replaced."
+      name="description"
+    />
+    <title>The idea — Aether Cache</title>
+    <script>
+      try {
+        const t = localStorage.getItem("aether-theme");
+        if (t === "light" || t === "dark")
+          document.documentElement.dataset.theme = t;
+      } catch (e) {}
+    </script>
+    <link href="assets/site.css" rel="stylesheet" />
+    <link
+      as="font"
+      crossorigin=""
+      href="assets/plex-sans.woff2"
+      rel="preload"
+      type="font/woff2"
+    />
+    <meta property="og:title" content="The idea — Aether Cache" />
+    <meta
+      property="og:description"
+      content="The idea behind Aether Cache: project memory that can explain when a fact is still useful, when it changed, and why it was replaced."
+    />
+    <meta property="og:type" content="website" />
+    <meta
+      property="og:url"
+      content="https://anishchugh05.github.io/Aether-Cache-Redis-Compatible-Vector-Store/about.html"
+    />
+    <meta
+      property="og:image"
+      content="https://anishchugh05.github.io/Aether-Cache-Redis-Compatible-Vector-Store/assets/og-image.png"
+    />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="Aether Cache. Memory that stays true to your code. A dashboard card shows a stale memory and the file versions behind it."
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="The idea — Aether Cache" />
+    <meta
+      name="twitter:description"
+      content="The idea behind Aether Cache: project memory that can explain when a fact is still useful, when it changed, and why it was replaced."
+    />
+    <meta
+      name="twitter:image"
+      content="https://anishchugh05.github.io/Aether-Cache-Redis-Compatible-Vector-Store/assets/og-image.png"
+    />
+    <meta
+      name="twitter:image:alt"
+      content="Aether Cache. Memory that stays true to your code. A stale-memory review card."
+    />
+  </head>
+  <body class="page-about">
+    <a class="skip" href="#main">Skip to content</a>
+    <div class="wrap">
+      <header class="masthead">
+        <a aria-label="Aether Cache home" class="brand" href="index.html"
+          ><svg
+            aria-hidden="true"
+            class="brand-mark"
+            fill="none"
+            viewBox="0 0 30 32"
+          >
+            <path
+              d="M15 2 28 9 15 16 2 9 15 2Z"
+              stroke="currentColor"
+              stroke-width="2"
+            ></path>
+            <path
+              d="m2 16 13 7 13-7M2 23l13 7 13-7"
+              stroke="currentColor"
+              stroke-width="2"
+            ></path></svg
+          >Aether Cache</a
+        >
+        <nav aria-label="Main navigation">
+          <a href="index.html">Home</a
+          ><a href="how-it-works.html">How it works</a
+          ><a href="install.html">Install</a
+          ><a aria-current="page" href="about.html">About</a>
+        </nav>
+        <button
+          aria-label="Switch color theme"
+          class="theme"
+          id="theme-toggle"
+          type="button"
+        >
+          <svg
+            aria-hidden="true"
+            fill="none"
+            height="17"
+            viewBox="0 0 20 20"
+            width="17"
+          >
+            <path
+              d="M16.7 12.6A7 7 0 0 1 7.4 3.3 7 7 0 1 0 16.7 12.6Z"
+              stroke="currentColor"
+              stroke-linejoin="round"
+              stroke-width="1.4"
+            ></path>
+          </svg>
+        </button>
+      </header>
+    </div>
+    <main id="main" tabindex="-1">
+      <header class="page-intro wrap">
+        <h1>Good memory knows when to let go.</h1>
+        <div>
+          <p>
+            Code changes. Decisions change. The context your AI carries into the
+            next session should change with them.
+          </p>
+        </div>
+      </header>
+      <section aria-labelledby="idea-title" class="about-story wrap">
+        <h2 id="idea-title">Remembering is only<br />half the problem.</h2>
+        <div>
+          <p>
+            An AI coding tool starts a new session without the decisions that
+            shaped your project. Saving those decisions helps—until the code
+            moves on and the saved context doesn’t.
+          </p>
+          <p>
+            Aether Cache connects a fact to the files behind it. When those
+            files change, the fact can leave active memory without disappearing
+            from history. You can see what was believed, what changed, and why.
+          </p>
+          <p class="story-principle">
+            The goal is context you can inspect, question, and keep current.
+          </p>
+        </div>
+      </section>
+      <section aria-labelledby="stack-title" class="section stack-section">
+        <div class="wrap stack-grid">
+          <div class="stack-copy">
+            <h2 id="stack-title">Not a Redis clone.</h2>
+            <p>
+              It started as a from-scratch rebuild of Redis in Java. Then it
+              kept going: vector search, traceable memories, and an awareness of
+              the code underneath them.
+            </p>
+            <p class="aside-note">
+              Every layer written from scratch.<br />The Redis protocol stays
+              compatible: <code>redis-cli</code> and <code>redis-py</code> work
+              unchanged.
+            </p>
+          </div>
+          <div>
+            <ol
+              aria-label="System layers, from AI tools to storage"
+              class="layers"
+            >
+              <li class="layer">
+                <strong>MCP server</strong>
+                <p>The connection to Claude Code, Cursor, and Codex.</p>
+              </li>
+              <li class="layer">
+                <strong>Git awareness</strong>
+                <p>
+                  Content hashes link memories to files. Changed files retire
+                  old facts.
+                </p>
+              </li>
+              <li class="layer">
+                <strong>Memory layer</strong>
+                <p>
+                  Status, provenance, full history, duplicate merging, and
+                  conflict review.
+                </p>
+              </li>
+              <li class="layer">
+                <strong>HNSW index</strong>
+                <p>
+                  Its own vector index. 99.4% recall@10 at 0.84 ms on 100K
+                  vectors.
+                </p>
+              </li>
+              <li class="layer">
+                <strong>Java engine</strong>
+                <p>
+                  Redis-compatible. 50+ commands, replication, transactions, and
+                  crash-safe persistence.
+                </p>
+              </li>
+            </ol>
+            <p class="stack-base">
+              From the tool connection down to the bytes on disk.
+            </p>
+          </div>
+        </div>
+      </section>
+      <section aria-labelledby="status-title" class="section status-section">
+        <div class="wrap status-grid">
+          <div>
+            <h2 id="status-title">A working v0.1.2. Still early.</h2>
+            <p>
+              This is v0.1.2. The engine and memory workflow are here. There’s
+              more to measure, and more to build.
+            </p>
+          </div>
+          <div class="status-list">
+            <div class="status-row">
+              <span class="now">Today</span>
+              <p>
+                Local shared memory, file-linked retirement, provenance, file
+                sync, MCP connections, and a browser dashboard for reviewing
+                memories (<code>aether-cache ui</code>).
+              </p>
+            </div>
+            <div class="status-row">
+              <span>Next</span>
+              <p>
+                Team memory with GitHub sign-in, so a team shares one project
+                memory and pull requests that would make memories stale get
+                flagged.<br />A with-vs-without-memory evaluation.<br />Log
+                compaction.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+      <div class="wrap">
+        <div class="closing">
+          <div>
+            <h2>Built in the open.</h2>
+            <p>
+              A project by Anish Chugh. Read the code, follow the work, or try
+              it locally.
+            </p>
+          </div>
+          <a
+            class="button"
+            href="https://github.com/anishchugh05/Aether-Cache-Redis-Compatible-Vector-Store"
+            >Explore on GitHub<svg
+              aria-hidden="true"
+              class="link-arrow"
+              fill="none"
+              height="20"
+              viewBox="0 0 20 20"
+              width="20"
+            >
+              <path
+                d="M3 10h13m-5-5 5 5-5 5"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.5"
+              ></path></svg
+          ></a>
+        </div>
+      </div>
+    </main>
+    <div class="wrap">
+      <footer class="footer">
+        <span>Built by Anish Chugh.</span>
+        <div class="footer-links">
+          <a
+            href="https://github.com/anishchugh05/Aether-Cache-Redis-Compatible-Vector-Store"
+            >GitHub</a
+          ><a href="https://pypi.org/project/aether-cache/">PyPI</a
+          ><span>Aether Cache v0.1.2</span>
+        </div>
+      </footer>
+    </div>
+    <div
+      aria-live="polite"
+      class="sr-only"
+      id="copy-status"
+      role="status"
+    ></div>
+    <script defer="" src="assets/site.js"></script>
+  </body>
+</html>
