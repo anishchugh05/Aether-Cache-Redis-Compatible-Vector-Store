@@ -1,4 +1,4 @@
-[![progress-banner](https://backend.codecrafters.io/progress/redis/f43a7cd3-11e6-45dc-a8ba-9d6690c73ac0)](https://app.codecrafters.io/users/anishchugh05?r=2qF)
+[![Aether Cache: memory that stays true to your code](https://anishchugh05.github.io/Aether-Cache-Redis-Compatible-Vector-Store/assets/og-image.png)](https://anishchugh05.github.io/Aether-Cache-Redis-Compatible-Vector-Store/)
 
 # Aether Cache
 
@@ -48,7 +48,14 @@ other tools ─┘   (Python: embeddings,│          memories, HNSW vector inde
 
 ## What it looks like
 
-A memory linked to a file, the file changes, and the next lookup catches it:
+The dashboard (`aether-cache ui`): memories whose files changed wait for a decision, with the file versions side by side.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://anishchugh05.github.io/Aether-Cache-Redis-Compatible-Vector-Store/assets/dashboard-dark.png">
+  <img alt="The Aether Cache dashboard showing stale memories and a possible conflict" src="https://anishchugh05.github.io/Aether-Cache-Redis-Compatible-Vector-Store/assets/dashboard-light.png">
+</picture>
+
+And from your AI tool's side, a memory linked to a file, the file changes, and the next lookup catches it:
 
 ```
 > remember("The database runs Postgres via docker compose", files=["docker-compose.yml"])
@@ -187,6 +194,8 @@ A Redis-compatible server written from scratch in Java. It speaks RESP, so `redi
 `redis-py` work with it unchanged. The core was built by completing every stage and extension of the
 [CodeCrafters "Build Your Own Redis"](https://codecrafters.io/challenges/redis) challenge; the vector index,
 persistence hardening, and the memory layer are my own additions.
+
+[![progress-banner](https://backend.codecrafters.io/progress/redis/f43a7cd3-11e6-45dc-a8ba-9d6690c73ac0)](https://app.codecrafters.io/users/anishchugh05?r=2qF)
 
 ### Throughput vs. official Redis
 
