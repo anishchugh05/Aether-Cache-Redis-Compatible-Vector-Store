@@ -263,8 +263,13 @@ def cmd_import(args) -> int:
     if left_out:
         print(f"\nLeft out ({len(left_out)}):")
         for n in left_out:
-            why = (f"mentions {', '.join(n['missing'])}, which doesn't exist (probably out of date)"
-                   if n["missing"] else "doesn't look like a fact about the project")
+            if n["similar"]:
+                what = n["similar"]["id"] or "another note here"
+                why = f"very similar to {what}: \"{n['similar']['text']}\""
+            elif n["missing"]:
+                why = f"mentions {', '.join(n['missing'])}, which doesn't exist (probably out of date)"
+            else:
+                why = "doesn't look like a fact about the project"
             print(f"     - {n['text']}\n       {why}")
     if known:
         print(f"\nAlready remembered: {len(known)}")

@@ -253,10 +253,60 @@ def _key(file: str, text: str) -> str:
     return hashlib.sha1(f"{file}\n{text}".encode()).hexdigest()[:12]
 
 
-def scan(project: str, root: Path) -> dict:
-    """Everything import would bring in from this repo's notes files, tagged for review: known (already
-    remembered), missing (mentions a file that doesn't exist, so probably already stale), weak (doesn't read
-    like a fact about the project). Only notes with none of these are selected by default."""
+# Same thresholds as the engine (Main.java): at or above DUPLICATE it treats a new memory as the same one,
+# at or above CONFLICT as a possible contradiction. A note scoring that close to a memory you already have
+# would only be skipped or flagged after importing, so it's flagged before instead.
+DUPLICATE_SIMILARITY = 0.97
+CONFLICT_SIMILARITY = 0.80
+
+
+def _cosine(a: List[float], b: List[float]) -> float:
+    dot = sum(x * y for x, y in zip(a, b))
+    na = sum(x * x for x in a) ** 0.5
+    nb = sum(y * y for y in b) ** 0.5
+    return dot / (na * nb) if na and nb else 0.0
+
+
+def _flag_similar(project: str, notes: List[dict]) -> Dict[str, List[str]]:
+    """Compares each new note by meaning with the project's current memories, and with the notes before it
+    in this import. Marks near-copies as known and close matches as similar (unselected). Returns the
+    notes' embeddings by key, so importing them doesn't compute them twice."""
+    fresh = [n for n in notes if not n["known"]]
+    if not fresh:
+        return {}
+    vectors = server.embed_many([n["text"] for n in fresh])
+    pipe = server.db().pipeline(transaction=False)
+    for v in vectors:
+        pipe.execute_command("MEM.SEARCH", project, 1, "STATUS", "active", "VECTOR", *v)
+    try:
+        hits = pipe.execute()
+    except Exception:
+        hits = [server.run("MEM.SEARCH", project, 1, "STATUS", "active", "VECTOR", *v) for v in vectors]
+    floats = [[float(x) for x in v] for v in vectors]
+    for i, (note, hit) in enumerate(zip(fresh, hits)):
+        if hit:
+            mid, score, text = hit[0][0], float(hit[0][1]), hit[0][2]
+            if score >= DUPLICATE_SIMILARITY:
+                note["known"] = True
+                note["selected"] = False
+                continue
+            if score >= CONFLICT_SIMILARITY:
+                note["similar"] = {"id": mid, "text": text, "score": round(score, 2)}
+                note["selected"] = False
+                continue
+        for j in range(i):  # two notes in this import that say the same thing, e.g. in CLAUDE.md and a rule
+            other = fresh[j]
+            if other["known"] or other.get("similar"):
+                continue
+            score = _cosine(floats[i], floats[j])
+            if score >= CONFLICT_SIMILARITY:
+                note["similar"] = {"id": None, "text": other["text"], "score": round(score, 2)}
+                note["selected"] = False
+                break
+    return {n["key"]: v for n, v in zip(fresh, vectors)}
+
+
+def _scan(project: str, root: Path) -> tuple:
     if not root.is_dir():
         raise NotesError(f"{root} isn't a folder.")
     existing = set()
@@ -280,27 +330,34 @@ def scan(project: str, root: Path) -> dict:
             linked, missing = mentioned_paths(note, root, skip=rels)
             known = n in existing or body in existing
             notes.append({"key": _key(rel, note), "text": note, "file": rel, "files": linked,
-                          "missing": missing, "known": known, "weak": found["weak"],
+                          "missing": missing, "known": known, "weak": found["weak"], "similar": None,
                           "selected": not known and not missing and not found["weak"]})
             count += 1
         per_file.append({"path": rel, "notes": count})
-    return {"project": project, "root": str(root), "files": per_file, "notes": notes}
+    vectors = _flag_similar(project, notes)
+    return {"project": project, "root": str(root), "files": per_file, "notes": notes}, vectors
+
+
+def scan(project: str, root: Path) -> dict:
+    """Everything import would bring in from this repo's notes files, tagged for review: known (already
+    remembered, word for word or nearly), similar (close in meaning to a memory you have, or to another note
+    here), missing (mentions a file that doesn't exist, so probably already stale), weak (doesn't read like
+    a fact about the project). Only notes with none of these are selected by default."""
+    return _scan(project, root)[0]
 
 
 def apply(project: str, root: Path, keys: Optional[List[str]] = None) -> dict:
     """Saves the chosen notes as memories (by key from scan; None means the ones selected by default).
     Notes that turn out to be already known are skipped, never duplicated."""
-    found = scan(project, root)["notes"]
-    chosen = [n for n in found if not n["known"] and (n["selected"] if keys is None else n["key"] in set(keys))]
+    found, vectors = _scan(project, root)
+    wanted = set(keys or ())
+    chosen = [n for n in found["notes"] if not n["known"] and (n["selected"] if keys is None else n["key"] in wanted)]
     result = {"saved": [], "duplicates": 0, "conflicts": 0}
-    if not chosen:
-        return result
-    vectors = server.embed_many([n["text"] for n in chosen])
-    for note, vector in zip(chosen, vectors):
+    for note in chosen:
         args = ["MEM.ADD", project, note["text"], "SOURCE", f"{note['file']} (imported)", "SESSION", "import"]
         if note["files"]:
             args += ["FILES", server.link_files(note["files"], root)]
-        mem_id, outcome, _related = server.run(*args, "VECTOR", *vector)
+        mem_id, outcome, _related = server.run(*args, "VECTOR", *vectors[note["key"]])
         if outcome == "duplicate":
             result["duplicates"] += 1
             continue
