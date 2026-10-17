@@ -354,3 +354,6 @@ memory_mcp/calibrate.py      similarity calibration for duplicate/contradiction 
 vector_bench.py              HNSW benchmark (writes results.json)
 crash_test.py                kill -9 crash-safety test
 ```
+## License
+
+MIT. See [LICENSE](LICENSE).

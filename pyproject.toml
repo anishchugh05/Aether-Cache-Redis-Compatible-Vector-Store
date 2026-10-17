@@ -1,5 +1,5 @@
 [build-system]
-requires = ["hatchling>=1.24"]
+requires = ["hatchling>=1.27"]
 build-backend = "hatchling.build"
 
 [project]
@@ -9,6 +9,8 @@ description = "Shared memory for AI coding tools that stays true to your code."
 readme = "README.md"
 requires-python = ">=3.10"
 authors = [{ name = "Anish Chugh" }]
+license = "MIT"
+license-files = ["LICENSE"]
 dependencies = [
     "mcp>=1.2",
     "fastembed>=0.3",
@@ -27,7 +29,7 @@ packages = ["aether_cache"]
 artifacts = ["aether_cache/engine/aether-engine.jar"]  # *.jar is gitignored; ship this one anyway
 
 [tool.hatch.build.targets.sdist]
-include = ["aether_cache", "README.md", "pyproject.toml"]
+include = ["aether_cache", "README.md", "LICENSE", "pyproject.toml"]
 artifacts = ["aether_cache/engine/aether-engine.jar"]
 
 [tool.uv]
