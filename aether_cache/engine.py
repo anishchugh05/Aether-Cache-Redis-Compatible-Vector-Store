@@ -34,36 +34,58 @@ def java_install_hint() -> str:
         how = "winget install EclipseAdoptium.Temurin.21.JRE   (or download it from https://adoptium.net)"
     else:
         how = "sudo apt install openjdk-21-jre-headless   (or your distro's equivalent, or https://adoptium.net)"
-    return f"Aether Cache needs Java {MIN_JAVA} or newer. Install it with:\n    {how}"
+    return (f"Run `aether-cache setup` and it downloads a private copy of Java for you, "
+            f"or install Java {MIN_JAVA}+ yourself:\n    {how}")
+
+
+def _java_version(java: str) -> Optional[int]:
+    try:
+        out = subprocess.run([java, "-version"], capture_output=True, text=True, timeout=15)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    match = re.search(r'version "(\d+)(?:\.(\d+))?', out.stderr + out.stdout)
+    if out.returncode != 0 or not match:
+        return None
+    major = int(match.group(1))
+    if major == 1 and match.group(2):  # old-style "1.8.0" means Java 8
+        major = int(match.group(2))
+    return major
 
 
 def find_java() -> Tuple[str, int]:
     """(path to a working java, its major version). Raises EngineError if there's no usable Java.
+    Prefers the computer's own Java; falls back to the private copy `setup` downloads when there isn't one.
     Runs `java -version` rather than trusting the PATH: macOS ships a /usr/bin/java stub that only
     says "Unable to locate a Java Runtime"."""
+    from .javart import private_java
     candidates = []
-    if os.environ.get("JAVA_HOME"):
-        candidates.append(str(Path(os.environ["JAVA_HOME"]) / "bin" / ("java.exe" if os.name == "nt" else "java")))
-    if shutil.which("java"):
-        candidates.append(shutil.which("java"))
+    if not os.environ.get("AETHER_IGNORE_SYSTEM_JAVA"):  # testing only: act as if this computer had no Java
+        if os.environ.get("JAVA_HOME"):
+            candidates.append(str(Path(os.environ["JAVA_HOME"]) / "bin" / ("java.exe" if os.name == "nt" else "java")))
+        if shutil.which("java"):
+            candidates.append(shutil.which("java"))
+    private = private_java()
+    if private:
+        candidates.append(str(private))
     too_old = None
     for java in candidates:
-        try:
-            out = subprocess.run([java, "-version"], capture_output=True, text=True, timeout=15)
-        except (OSError, subprocess.SubprocessError):
+        major = _java_version(java)
+        if major is None:
             continue
-        match = re.search(r'version "(\d+)(?:\.(\d+))?', out.stderr + out.stdout)
-        if out.returncode != 0 or not match:
-            continue
-        major = int(match.group(1))
-        if major == 1 and match.group(2):  # old-style "1.8.0" means Java 8
-            major = int(match.group(2))
         if major >= MIN_JAVA:
             return java, major
         too_old = major
     if too_old:
         raise EngineError(f"Found Java {too_old}, which is too old.\n" + java_install_hint())
     raise EngineError("Java isn't installed.\n" + java_install_hint())
+
+
+def is_private(java: str) -> bool:
+    from .javart import JAVA_DIR
+    try:
+        return Path(java).resolve().is_relative_to(JAVA_DIR.resolve())
+    except (OSError, ValueError):
+        return False
 
 
 # ---------- talking to the engine ----------

@@ -17,11 +17,38 @@ def _say(mark: str, text: str) -> None:
 
 # ---------- commands ----------
 
+def _java_label(java: str) -> str:
+    return f"private copy in {java_dir()}" if engine.is_private(java) else java
+
+
+def java_dir():
+    from .javart import JAVA_DIR
+    return JAVA_DIR
+
+
+def _java_for_setup():
+    """The computer's own Java if it has a recent enough one; otherwise downloads a private copy."""
+    try:
+        return engine.find_java()
+    except engine.EngineError as missing:
+        from . import javart
+        reason = str(missing).splitlines()[0]  # "Java isn't installed." or "Found Java 8, which is too old."
+        print(f"[ .... ] {reason} Downloading a private copy of Java {javart.FEATURE_VERSION} for Aether Cache "
+              f"(about 50 MB, only the first time).\n"
+              f"         It goes in {javart.JAVA_DIR}, only Aether Cache uses it, and nothing else on your "
+              f"computer changes.", flush=True)
+        try:
+            javart.download()
+        except javart.JavaDownloadError as e:
+            raise engine.EngineError(str(e))
+        return engine.find_java()
+
+
 def cmd_setup(args) -> int:
     print(f"Setting up Aether Cache {__version__}\n")
     try:
-        java, major = engine.find_java()
-        _say(OK, f"Java {major} ({java})")
+        java, major = _java_for_setup()
+        _say(OK, f"Java {major} ({_java_label(java)})")
         _say(OK, engine.start())
     except engine.EngineError as e:
         _say(FAIL, str(e))
@@ -31,7 +58,10 @@ def cmd_setup(args) -> int:
     if config.FAKE_EMBEDDER:
         _say(OK, "Embedding model: test mode, nothing to download")
     else:
-        print("[ .... ] Downloading the embedding model (about 90 MB, only the first time)...", flush=True)
+        if any(config.MODELS_DIR.glob("*")):
+            print("[ .... ] Loading the embedding model...", flush=True)
+        else:
+            print("[ .... ] Downloading the embedding model (about 90 MB, only the first time)...", flush=True)
         try:
             from .server import embed
             embed("warm up")
@@ -121,7 +151,7 @@ def cmd_doctor(args) -> int:
     _say(OK, f"Aether Cache {__version__}, Python {sys.version.split()[0]} ({sys.executable})")
     try:
         java, major = engine.find_java()
-        _say(OK, f"Java {major} ({java})")
+        _say(OK, f"Java {major} ({_java_label(java)})")
     except engine.EngineError as e:
         _say(FAIL, str(e))
         problems += 1
@@ -329,6 +359,9 @@ def cmd_uninstall(args) -> int:
         shutil.rmtree(config.HOME, ignore_errors=True)
         _say(OK, f"Deleted {config.HOME}")
     elif has_data:
+        from . import javart
+        if javart.remove():
+            _say(OK, f"Removed Aether Cache's private copy of Java ({javart.JAVA_DIR})")
         _say(OK, f"Kept your memories in {config.HOME}. Reinstall any time and they're back.")
     print(f"\nLast step, remove the program itself:\n  {_uninstall_command()}")
     return 1 if failed else 0

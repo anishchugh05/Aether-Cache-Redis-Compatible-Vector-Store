@@ -91,9 +91,8 @@ m1 retired; m3 replaces it.
 
 ## Quick start
 
-You need **Java 11+** (`brew install openjdk@21` on macOS, or [adoptium.net](https://adoptium.net)) and
-[**uv**](https://docs.astral.sh/uv/) (`curl -LsSf https://astral.sh/uv/install.sh | sh`), which also takes care of
-Python for you. Then:
+You need [**uv**](https://docs.astral.sh/uv/) (`curl -LsSf https://astral.sh/uv/install.sh | sh`), which also takes
+care of Python for you. Then:
 
 ```sh
 uv tool install aether-cache
@@ -107,6 +106,10 @@ repo and try:
 > Remember that our tests need DOCKER_HOST set. It depends on docker-compose.yml.
 
 Then start a new session and ask how to run the tests.
+
+The engine runs on Java 11+. If you have it, it's used. If you don't, `setup` downloads a private copy (about
+50 MB) into `~/.aether-cache/java`, checks it against its published checksum, and uses it only for Aether Cache;
+nothing is installed system-wide, and `aether-cache uninstall` removes it.
 
 Already keep notes for your AI in `CLAUDE.md`, `AGENTS.md`, or Cursor rules? Run `aether-cache import` in the repo
 (or use **Import notes** in the dashboard) to turn them into memories, linked to the files they mention.
@@ -341,6 +344,7 @@ src/main/java/Main.java      the engine (single file, from the CodeCrafters setu
 aether_cache/                the Python package behind the `aether-cache` command
   server.py                  MCP server: embeddings, git staleness, AGENTS.md/CLAUDE.md sync
   engine.py                  finds Java, starts and stops the engine in the background
+  javart.py                  downloads a private copy of Java when the computer has none
   connect.py                 registers Aether Cache with Claude Code, Cursor, and Codex
   cli.py                     the `aether-cache` command
   ui.py, ui/index.html       the dashboard (`aether-cache ui`): a local server, its API, and the page

@@ -10,7 +10,7 @@
     <meta content="width=device-width,initial-scale=1" name="viewport" />
     <meta content="light dark" name="color-scheme" />
     <meta
-      content="Install Aether Cache locally with Java and uv, connect Claude Code, Cursor, and Codex, and save your first project memory."
+      content="Install Aether Cache locally with uv, connect Claude Code, Cursor, and Codex, and save your first project memory."
       name="description"
     />
     <title>Install — Aether Cache</title>
@@ -21,7 +21,7 @@
           document.documentElement.dataset.theme = t;
       } catch (e) {}
     </script>
-    <link href="assets/site.css?v=3" rel="stylesheet" />
+    <link href="assets/site.css?v=5" rel="stylesheet" />
     <link
       as="font"
       crossorigin=""
@@ -32,7 +32,7 @@
     <meta property="og:title" content="Install — Aether Cache" />
     <meta
       property="og:description"
-      content="Install Aether Cache locally with Java and uv, connect Claude Code, Cursor, and Codex, and save your first project memory."
+      content="Install Aether Cache locally with uv, connect Claude Code, Cursor, and Codex, and save your first project memory."
     />
     <meta property="og:type" content="website" />
     <meta
@@ -53,7 +53,7 @@
     <meta name="twitter:title" content="Install — Aether Cache" />
     <meta
       name="twitter:description"
-      content="Install Aether Cache locally with Java and uv, connect Claude Code, Cursor, and Codex, and save your first project memory."
+      content="Install Aether Cache locally with uv, connect Claude Code, Cursor, and Codex, and save your first project memory."
     />
     <meta
       name="twitter:image"
@@ -130,7 +130,7 @@
               remembering.
             </p>
             <div class="install-version">
-              v0.1.3, available on
+              v0.1.4, available on
               <a href="https://pypi.org/project/aether-cache/">PyPI</a>
             </div>
             <p class="setup-note">
@@ -142,23 +142,8 @@
             <div class="install-step">
               <span aria-hidden="true" class="step-number">1</span>
               <div>
-                <h2 class="install-step-title">A couple of prerequisites</h2>
+                <h2 class="install-step-title">One prerequisite</h2>
                 <div class="prereq">
-                  <div class="prereq-row">
-                    <strong>Java 11+</strong
-                    ><a href="https://adoptium.net/">Any OS: adoptium.net</a>
-                    <p>On macOS:</p>
-                    <div class="code-block">
-                      <pre>brew install openjdk@21</pre>
-                      <button
-                        aria-label="Copy Java install command"
-                        class="copy-button"
-                        data-copy="brew install openjdk@21"
-                      >
-                        Copy
-                      </button>
-                    </div>
-                  </div>
                   <div class="prereq-row">
                     <strong>uv</strong>
                     <div class="code-block">
@@ -172,6 +157,10 @@
                       </button>
                     </div>
                   </div>
+                  <p class="prereq-note">
+                    No Java? No problem. Setup downloads a private copy just for
+                    Aether Cache and leaves the rest of your computer alone.
+                  </p>
                 </div>
               </div>
             </div>
@@ -254,6 +243,94 @@ aether-cache setup"
                 >
               </li>
             </ul>
+          </div>
+        </div>
+      </section>
+      <section aria-labelledby="faq-title" class="faq" id="faq">
+        <div class="wrap faq-grid">
+          <div class="faq-intro">
+            <h2 id="faq-title">Common questions</h2>
+            <p>
+              Short answers about privacy, setup, and what happens to your
+              memories.
+            </p>
+          </div>
+          <div class="faq-list">
+            <details class="faq-item">
+              <summary>Does my code or my data leave my computer?</summary>
+              <p>
+                No. Aether Cache runs entirely on your machine: the engine only accepts connections from your own computer, and your memories live in <code>~/.aether-cache</code>. The only things it downloads are, once, the embedding model it uses to search memories by meaning (about 90 MB) and, if you don’t have Java, a private copy of Java. Your AI tool still talks to its own provider the way it always does; Aether Cache doesn’t add anything to that.
+              </p>
+            </details>
+            <details class="faq-item">
+              <summary>Which AI tools does it work with?</summary>
+              <p>
+                <code>aether-cache setup</code> connects Claude Code, Cursor, and Codex automatically, for all your projects. Any other tool that supports MCP works too: run <code>aether-cache connect --print</code> for the settings to paste into it.
+              </p>
+            </details>
+            <details class="faq-item">
+              <summary>Do I need Java?</summary>
+              <p>
+                No. The engine runs on Java 11 or newer. If you already have it, Aether Cache uses yours. If you don’t, <code>setup</code> downloads a private copy (about 50 MB) into <code>~/.aether-cache/java</code>, checks it against its published checksum, and uses it only for Aether Cache. Nothing is installed system-wide, and uninstalling removes it.
+              </p>
+            </details>
+            <details class="faq-item">
+              <summary>What does “stale” mean?</summary>
+              <p>
+                When your AI saves a memory, it can link it to the files the fact depends on, like <code>docker-compose.yml</code>. If one of those files changes, the memory is marked stale: your AI stops seeing it, and the dashboard (<code>aether-cache ui</code>) asks you to decide. Click <strong>Still true</strong> to keep it, or <strong>Retire</strong> if it’s wrong now.
+              </p>
+            </details>
+            <details class="faq-item">
+              <summary>How is this different from CLAUDE.md or my AI’s built-in memory?</summary>
+              <p>
+                Notes files and built-in memories never know when they’ve gone out of date, and each tool keeps its own. Aether Cache is one memory shared by all your AI tools, and it checks memories against your files so outdated ones stop being used.
+              </p>
+              <p>
+                Already have notes? Run <code>aether-cache import</code>, or click <strong>Import notes</strong> in the dashboard, to turn your CLAUDE.md, AGENTS.md, and Cursor rules into memories. You review them before anything is saved.
+              </p>
+            </details>
+            <details class="faq-item">
+              <summary>Does it work in folders that aren’t git repos?</summary>
+              <p>
+                Yes. Memories are kept per project, named after the project’s folder, and change detection uses file fingerprints, so git isn’t required.
+              </p>
+            </details>
+            <details class="faq-item">
+              <summary>Does it work on Windows and Linux?</summary>
+              <p>
+                It’s built for macOS, Windows, and Linux. So far it has been tested most on macOS, so if something goes wrong on Windows or Linux, please tell me using the form below.
+              </p>
+            </details>
+            <details class="faq-item">
+              <summary>Can my team share memories?</summary>
+              <p>
+                Not yet: each computer keeps its own memory. To share today, run <code>aether-cache sync</code>, which writes the current memories into your repo’s AGENTS.md and CLAUDE.md so they’re committed with the code. Shared team memory is planned.
+              </p>
+            </details>
+            <details class="faq-item">
+              <summary>How do I back up or move my memories?</summary>
+              <p>
+                Run <code>aether-cache export</code>, or click <strong>Export</strong> in the dashboard. You get a JSON file with every memory, the files it’s linked to, and its full history.
+              </p>
+            </details>
+            <details class="faq-item">
+              <summary>How do I uninstall it?</summary>
+              <p>
+                Run <code>aether-cache uninstall</code>. It disconnects your AI tools, stops the engine, removes the private Java copy if there is one, and asks before deleting your memories. Then remove the program with <code>uv tool uninstall aether-cache</code>.
+              </p>
+            </details>
+            <details class="faq-item">
+              <summary>Is it free?</summary>
+              <p>
+                Yes. There’s no account and no paid plan, and the code is on <a href="https://github.com/anishchugh05/Aether-Cache-Redis-Compatible-Vector-Store">GitHub</a>.
+              </p>
+            </details>
+            <details class="faq-item">
+              <summary>Something isn’t working. What should I do?</summary>
+              <p>
+                Run <code>aether-cache doctor</code>: it checks everything and says how to fix what it finds. If the <code>aether-cache</code> command isn’t found after installing, run <code>uv tool update-shell</code> and open a new terminal. Still stuck? Send the output of <code>aether-cache doctor</code> with the form below.
+              </p>
+            </details>
           </div>
         </div>
       </section>
@@ -349,12 +426,13 @@ aether-cache setup"
       <footer class="footer">
         <span>Built by Anish Chugh.</span>
         <div class="footer-links">
-          <a href="install.html#contact">Contact</a
+          <a href="install.html#faq">FAQ</a
+          ><a href="install.html#contact">Contact</a
           ><a
             href="https://github.com/anishchugh05/Aether-Cache-Redis-Compatible-Vector-Store"
             >GitHub</a
           ><a href="https://pypi.org/project/aether-cache/">PyPI</a
-          ><span>Aether Cache v0.1.3</span>
+          ><span>Aether Cache v0.1.4</span>
         </div>
       </footer>
     </div>
@@ -364,6 +442,6 @@ aether-cache setup"
       id="copy-status"
       role="status"
     ></div>
-    <script defer="" src="assets/site.js?v=3"></script>
+    <script defer="" src="assets/site.js?v=5"></script>
   </body>
 </html>

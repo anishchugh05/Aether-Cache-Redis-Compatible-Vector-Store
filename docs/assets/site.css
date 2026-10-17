@@ -814,6 +814,11 @@ nav a {
 .prereq-row p {
   margin-top: 5px;
 }
+.prereq-note {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+}
 .code-block {
   background: var(--surface);
   border-radius: 5px;
@@ -2304,6 +2309,97 @@ main:focus {
 @media (prefers-reduced-motion: reduce) {
   .field input,
   .field textarea {
+    transition: none;
+  }
+}
+
+/* ---------- FAQ ---------- */
+.faq {
+  border-top: 1px solid var(--line);
+  padding-block: 60px 70px;
+  scroll-margin-top: 24px;
+}
+.faq-grid {
+  display: grid;
+  grid-template-columns: 0.8fr 1.2fr;
+  gap: 72px;
+  align-items: start;
+}
+.faq-intro h2 {
+  font-size: 28px;
+  line-height: 1.2;
+}
+.faq-intro p {
+  font-size: 15px;
+  color: var(--muted);
+  max-width: 42ch;
+  margin-top: 14px;
+}
+.faq-item {
+  border-bottom: 1px solid var(--line);
+}
+.faq-item:first-child {
+  border-top: 1px solid var(--line);
+}
+.faq-item summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+  padding: 16px 2px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  list-style: none;
+}
+.faq-item summary::-webkit-details-marker {
+  display: none;
+}
+.faq-item summary::after {
+  content: "+";
+  flex-shrink: 0;
+  font-size: 20px;
+  line-height: 1;
+  color: var(--muted);
+  transition: transform 180ms ease;
+}
+.faq-item[open] summary::after {
+  transform: rotate(45deg);
+}
+.faq-item summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+.faq-item p {
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--muted);
+  max-width: 64ch;
+  margin: 0 2px 16px;
+}
+.faq-item p code {
+  font-size: 0.88em;
+  overflow-wrap: anywhere;
+}
+.faq-item p a,
+.faq-item p strong {
+  color: var(--ink);
+}
+.faq-item p a {
+  text-underline-offset: 3px;
+}
+@media (max-width: 860px) {
+  .faq-grid {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  .faq {
+    padding-block: 44px 52px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .faq-item summary::after {
     transition: none;
   }
 }
