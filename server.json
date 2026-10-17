@@ -8,12 +8,12 @@
     "source": "github"
   },
   "websiteUrl": "https://anishchugh05.github.io/Aether-Cache-Redis-Compatible-Vector-Store/",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "packages": [
     {
       "registryType": "pypi",
       "identifier": "aether-cache",
-      "version": "0.1.5",
+      "version": "0.1.6",
       "runtimeHint": "uvx",
       "transport": {
         "type": "stdio"
