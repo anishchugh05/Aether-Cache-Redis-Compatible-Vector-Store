@@ -379,6 +379,18 @@ memory_mcp/calibrate.py      similarity calibration for duplicate/contradiction 
 vector_bench.py              HNSW benchmark (writes results.json)
 crash_test.py                kill -9 crash-safety test
 ```
+
+## Releasing
+
+Bump the version in `pyproject.toml`, `aether_cache/__init__.py`, and `server.json`, commit, then:
+
+```sh
+git tag v0.1.7 && git push --tags
+```
+
+The [release workflow](.github/workflows/release.yml) checks the versions match, builds and smoke-tests the package,
+publishes it to PyPI and the MCP Registry, and creates the GitHub Release.
+
 ## License
 
 MIT. See [LICENSE](LICENSE).

@@ -1,0 +1,115 @@
+# Releases a new version when a version tag is pushed:
+#
+#   git tag v0.1.7 && git push --tags
+#
+# 1. Checks the tag matches the version in pyproject.toml, aether_cache/__init__.py and server.json.
+# 2. Builds the package and smoke-tests it (installs it and checks `aether-cache --version`).
+# 3. Publishes to PyPI with trusted publishing (no token: PyPI trusts this workflow).
+# 4. Publishes to the official MCP Registry (GitHub OIDC login, no token).
+# 5. Creates the GitHub Release with the built files attached.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Check the tag matches every version number
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          PYPROJECT=$(sed -n 's/^version = "\(.*\)"/\1/p' pyproject.toml)
+          INIT=$(sed -n 's/^__version__ = "\(.*\)"/\1/p' aether_cache/__init__.py)
+          SERVER=$(jq -r '.version' server.json)
+          PACKAGE=$(jq -r '.packages[0].version' server.json)
+          echo "tag=$TAG pyproject=$PYPROJECT __init__=$INIT server.json=$SERVER/$PACKAGE"
+          for v in "$PYPROJECT" "$INIT" "$SERVER" "$PACKAGE"; do
+            if [ "$v" != "$TAG" ]; then
+              echo "::error::Version mismatch: the tag says $TAG, but the files say pyproject=$PYPROJECT, __init__=$INIT, server.json=$SERVER/$PACKAGE. Update them all, then tag again."
+              exit 1
+            fi
+          done
+
+      - uses: astral-sh/setup-uv@v6
+
+      - name: Build
+        run: uv build
+
+      - name: Smoke test the built package
+        run: |
+          uv venv /tmp/check
+          uv pip install --python /tmp/check/bin/python dist/*.whl
+          /tmp/check/bin/aether-cache --version | tee /tmp/version.txt
+          grep -q "aether-cache ${GITHUB_REF_NAME#v}$" /tmp/version.txt
+          unzip -l dist/*.whl | grep -q "aether_cache/engine/aether-engine.jar"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  pypi:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write # trusted publishing
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1
+
+  mcp-registry:
+    needs: pypi
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write # GitHub OIDC login to the registry
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Wait for PyPI to serve the new version
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          for i in $(seq 1 30); do
+            if curl -fsS "https://pypi.org/pypi/aether-cache/$VERSION/json" | grep -q "mcp-name: io.github.anishchugh05/aether-cache"; then
+              echo "PyPI has $VERSION"; exit 0
+            fi
+            sleep 10
+          done
+          echo "::error::PyPI didn't show version $VERSION with the mcp-name line within 5 minutes."
+          exit 1
+
+      - name: Install mcp-publisher
+        run: |
+          curl -fsSL "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz" | tar xz mcp-publisher
+
+      - name: Log in to the MCP Registry
+        run: ./mcp-publisher login github-oidc
+
+      - name: Publish to the MCP Registry
+        run: ./mcp-publisher publish
+
+  github-release:
+    needs: pypi
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          generate_release_notes: true
