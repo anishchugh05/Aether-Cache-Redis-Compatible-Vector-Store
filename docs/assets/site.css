@@ -2152,3 +2152,158 @@ main:focus {
     text-align: right;
   }
 }
+
+/* Contact form (install page). Posts to Formspree, which forwards messages by email. */
+.contact {
+  border-top: 1px solid var(--line);
+  padding-block: 60px 70px;
+}
+.contact-grid {
+  display: grid;
+  grid-template-columns: 0.8fr 1.2fr;
+  gap: 72px;
+  align-items: start;
+}
+.contact-intro h2 {
+  font-size: 28px;
+  line-height: 1.2;
+}
+.contact-intro p {
+  font-size: 15px;
+  color: var(--muted);
+  max-width: 42ch;
+  margin-top: 14px;
+}
+.contact-intro a {
+  color: var(--ink);
+  text-underline-offset: 3px;
+}
+.contact-intro .contact-note {
+  font-size: 13px;
+  padding-top: 18px;
+  margin-top: 22px;
+  border-top: 1px solid var(--line);
+}
+.contact-form {
+  display: grid;
+  gap: 18px;
+  padding: 30px 32px;
+  background: var(--subtle);
+  border-radius: 12px;
+}
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+.field {
+  display: grid;
+  gap: 7px;
+}
+.field-label {
+  font-size: 13px;
+  font-weight: 550;
+}
+.field-label .optional {
+  font-weight: 400;
+  color: var(--muted);
+}
+.field input,
+.field textarea {
+  width: 100%;
+  font: 15px/1.5 var(--sans);
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 10px 12px;
+  caret-color: var(--accent);
+  transition: border-color 140ms ease, box-shadow 140ms ease;
+}
+.field textarea {
+  resize: vertical;
+  min-height: 140px;
+}
+.field input::placeholder,
+.field textarea::placeholder {
+  color: var(--muted);
+  opacity: 0.8;
+}
+.field input:focus,
+.field textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.trap {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+.form-actions {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+.form-actions .button:disabled {
+  cursor: progress;
+}
+.form-status {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 0;
+}
+.form-status.is-error {
+  color: var(--stale);
+}
+.form-status a {
+  color: inherit;
+  text-underline-offset: 3px;
+}
+.form-done {
+  padding: 30px 32px;
+  background: var(--active-soft);
+  border-radius: 12px;
+}
+.form-done:focus {
+  outline: none;
+}
+.form-done h3 {
+  font-size: 20px;
+  color: var(--active);
+}
+.form-done p {
+  font-size: 15px;
+  color: var(--muted);
+  margin-top: 8px;
+}
+@media (max-width: 860px) {
+  .contact {
+    padding-block: 44px 50px;
+  }
+  .contact-grid {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+  .contact-intro h2 {
+    font-size: 25px;
+  }
+  .contact-form,
+  .form-done {
+    padding: 22px 20px;
+  }
+}
+@media (max-width: 600px) {
+  .field-row {
+    grid-template-columns: 1fr;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .field input,
+  .field textarea {
+    transition: none;
+  }
+}

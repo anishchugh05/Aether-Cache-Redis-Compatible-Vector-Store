@@ -301,4 +301,55 @@
       }
     }),
   );
+  // Contact form: send to Formspree without leaving the page. Without JavaScript the form still posts normally.
+  document.querySelectorAll("form[data-contact]").forEach((form) => {
+    const status = form.querySelector(".form-status");
+    const button = form.querySelector('button[type="submit"]');
+    const label = button.textContent;
+    const issues =
+      "https://github.com/anishchugh05/Aether-Cache-Redis-Compatible-Vector-Store/issues";
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (!form.reportValidity()) return;
+      button.disabled = true;
+      button.textContent = "Sending…";
+      status.textContent = "";
+      status.classList.remove("is-error");
+      try {
+        const res = await fetch(form.action, {
+          method: "POST",
+          body: new FormData(form),
+          headers: { Accept: "application/json" },
+        });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          const reason = (data.errors || []).map((e) => e.message).join(" ");
+          throw new Error(reason || "Your message couldn’t be sent.");
+        }
+        const email = form.elements.email.value.trim();
+        const done = document.createElement("div");
+        done.className = "form-done";
+        done.tabIndex = -1;
+        const title = document.createElement("h3");
+        title.textContent = "Thanks, your message is on its way.";
+        const note = document.createElement("p");
+        note.textContent = `I’ll reply to ${email} soon.`;
+        done.append(title, note);
+        form.replaceWith(done);
+        done.focus();
+      } catch (error) {
+        const link = document.createElement("a");
+        link.href = issues;
+        link.textContent = "open an issue on GitHub";
+        status.replaceChildren(
+          `${error.message} Please try again, or `,
+          link,
+          ".",
+        );
+        status.classList.add("is-error");
+        button.disabled = false;
+        button.textContent = label;
+      }
+    });
+  });
 })();

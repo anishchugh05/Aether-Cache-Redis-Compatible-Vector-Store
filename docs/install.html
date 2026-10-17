@@ -239,6 +239,68 @@ aether-cache setup"
           </div>
         </div>
       </section>
+      <section aria-labelledby="contact-title" class="contact" id="contact">
+        <div class="wrap contact-grid">
+          <div class="contact-intro">
+            <h2 id="contact-title">Questions or problems?</h2>
+            <p>
+              Stuck on a step, found a bug, or have an idea? Send a note and it
+              comes straight to me. For bugs, you can also
+              <a href="https://github.com/anishchugh05/Aether-Cache-Redis-Compatible-Vector-Store/issues">open an issue on GitHub</a>.
+            </p>
+            <p class="contact-note">Your email is only used to reply to you.</p>
+          </div>
+          <form
+            action="https://formspree.io/f/mljgaqpy"
+            class="contact-form"
+            data-contact=""
+            method="POST"
+          >
+            <div class="field-row">
+              <label class="field"
+                ><span class="field-label"
+                  >Name <span class="optional">(optional)</span></span
+                ><input autocomplete="name" maxlength="100" name="name" type="text"
+              /></label>
+              <label class="field"
+                ><span class="field-label">Email</span
+                ><input
+                  autocomplete="email"
+                  maxlength="200"
+                  name="email"
+                  required=""
+                  type="email"
+              /></label>
+            </div>
+            <label class="field"
+              ><span class="field-label">Message</span
+              ><textarea
+                maxlength="5000"
+                name="message"
+                placeholder="What happened, and what you were trying to do. Your OS and the output of aether-cache doctor help a lot."
+                required=""
+                rows="6"
+              ></textarea>
+            </label>
+            <input
+              name="_subject"
+              type="hidden"
+              value="Aether Cache: a message from the website"
+            />
+            <label aria-hidden="true" class="trap"
+              >Leave this empty<input
+                autocomplete="off"
+                name="_gotcha"
+                tabindex="-1"
+                type="text"
+            /></label>
+            <div class="form-actions">
+              <button class="button" type="submit">Send message</button>
+              <p aria-live="polite" class="form-status" role="status"></p>
+            </div>
+          </form>
+        </div>
+      </section>
       <div class="wrap">
         <div class="closing">
           <div>
@@ -269,7 +331,8 @@ aether-cache setup"
       <footer class="footer">
         <span>Built by Anish Chugh.</span>
         <div class="footer-links">
-          <a
+          <a href="install.html#contact">Contact</a
+          ><a
             href="https://github.com/anishchugh05/Aether-Cache-Redis-Compatible-Vector-Store"
             >GitHub</a
           ><a href="https://pypi.org/project/aether-cache/">PyPI</a
