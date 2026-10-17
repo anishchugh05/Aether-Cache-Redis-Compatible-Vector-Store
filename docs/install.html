@@ -10,7 +10,7 @@
     <meta content="width=device-width,initial-scale=1" name="viewport" />
     <meta content="light dark" name="color-scheme" />
     <meta
-      content="Install Aether Cache locally with uv, connect Claude Code, Cursor, and Codex, and save your first project memory."
+      content="Install Aether Cache with one command, connect Claude Code, Cursor, and Codex, and save your first project memory."
       name="description"
     />
     <title>Install — Aether Cache</title>
@@ -21,7 +21,7 @@
           document.documentElement.dataset.theme = t;
       } catch (e) {}
     </script>
-    <link href="assets/site.css?v=6" rel="stylesheet" />
+    <link href="assets/site.css?v=7" rel="stylesheet" />
     <link
       as="font"
       crossorigin=""
@@ -32,7 +32,7 @@
     <meta property="og:title" content="Install — Aether Cache" />
     <meta
       property="og:description"
-      content="Install Aether Cache locally with uv, connect Claude Code, Cursor, and Codex, and save your first project memory."
+      content="Install Aether Cache with one command, connect Claude Code, Cursor, and Codex, and save your first project memory."
     />
     <meta property="og:type" content="website" />
     <meta
@@ -53,7 +53,7 @@
     <meta name="twitter:title" content="Install — Aether Cache" />
     <meta
       name="twitter:description"
-      content="Install Aether Cache locally with uv, connect Claude Code, Cursor, and Codex, and save your first project memory."
+      content="Install Aether Cache with one command, connect Claude Code, Cursor, and Codex, and save your first project memory."
     />
     <meta
       name="twitter:image"
@@ -143,54 +143,53 @@
             <div class="install-step">
               <span aria-hidden="true" class="step-number">1</span>
               <div>
-                <h2 class="install-step-title">One prerequisite</h2>
+                <h2 class="install-step-title">Install and connect</h2>
                 <div class="prereq">
                   <div class="prereq-row">
-                    <strong>uv</strong>
+                    <strong>macOS and Linux</strong>
                     <div class="code-block">
-                      <pre>curl -LsSf https://astral.sh/uv/install.sh | sh</pre>
+                      <pre>curl -fsSL https://anishchugh05.github.io/Aether-Cache-Redis-Compatible-Vector-Store/install.sh | sh</pre>
                       <button
-                        aria-label="Copy uv install command"
+                        aria-label="Copy the macOS and Linux install command"
                         class="copy-button"
-                        data-copy="curl -LsSf https://astral.sh/uv/install.sh | sh"
+                        data-copy="curl -fsSL https://anishchugh05.github.io/Aether-Cache-Redis-Compatible-Vector-Store/install.sh | sh"
                       >
                         Copy
                       </button>
                     </div>
                   </div>
-                  <p class="prereq-note">
-                    No Java? No problem. Setup downloads a private copy just for
-                    Aether Cache and leaves the rest of your computer alone.
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div class="install-step">
-              <span aria-hidden="true" class="step-number">2</span>
-              <div>
-                <h2 class="install-step-title">Install and connect</h2>
-                <div class="code-block install-main">
-                  <pre>
-uv tool install aether-cache
-aether-cache setup</pre>
-                  <button
-                    aria-label="Copy Aether Cache install and setup commands"
-                    class="copy-button"
-                    data-copy="uv tool install aether-cache
-aether-cache setup"
-                  >
-                    Copy
-                  </button>
+                  <div class="prereq-row">
+                    <strong>Windows (PowerShell)</strong>
+                    <div class="code-block">
+                      <pre>powershell -ExecutionPolicy ByPass -c &quot;irm https://raw.githubusercontent.com/anishchugh05/Aether-Cache-Redis-Compatible-Vector-Store/main/docs/install.ps1 | iex&quot;</pre>
+                      <button
+                        aria-label="Copy the Windows install command"
+                        class="copy-button"
+                        data-copy="powershell -ExecutionPolicy ByPass -c &quot;irm https://raw.githubusercontent.com/anishchugh05/Aether-Cache-Redis-Compatible-Vector-Store/main/docs/install.ps1 | iex&quot;"
+                      >
+                        Copy
+                      </button>
+                    </div>
+                  </div>
                 </div>
                 <p>
-                  Setup starts the engine in the background, downloads the
-                  embedding model once (~90 MB), and connects Claude Code,
-                  Cursor, and Codex automatically.
+                  One line does everything: it installs uv (which brings Python)
+                  if you don&#8217;t have it, installs Aether Cache, and runs
+                  setup. Setup starts the engine, downloads the embedding model
+                  once (~90 MB), and connects Claude Code, Cursor, and Codex.
+                  No Java? It downloads a private copy just for Aether Cache.
+                </p>
+                <p class="prereq-note">
+                  Like to read scripts before running them? Here are
+                  <a href="install.sh">install.sh</a> and
+                  <a href="https://github.com/anishchugh05/Aether-Cache-Redis-Compatible-Vector-Store/blob/main/docs/install.ps1">install.ps1</a>.
+                  Prefer your own tools? See
+                  <a href="#other-ways">other ways to install</a>.
                 </p>
               </div>
             </div>
             <div class="install-step">
-              <span aria-hidden="true" class="step-number">3</span>
+              <span aria-hidden="true" class="step-number">2</span>
               <div>
                 <h2 class="install-step-title">
                   Give it something to remember
@@ -244,6 +243,54 @@ aether-cache setup"
                 >
               </li>
             </ul>
+            <div class="other-ways" id="other-ways">
+              <h2 class="install-step-title">Other ways to install</h2>
+              <p>
+                Already use a Python tool manager? Install with it, then run
+                <code>aether-cache setup</code>. Every option gets the same
+                version from <a href="https://pypi.org/project/aether-cache/">PyPI</a>,
+                and setup still takes care of Java for you.
+              </p>
+              <div class="prereq-row">
+                    <strong>uv</strong>
+                    <div class="code-block">
+                      <pre>uv tool install aether-cache</pre>
+                      <button
+                        aria-label="Copy the uv install command"
+                        class="copy-button"
+                        data-copy="uv tool install aether-cache"
+                      >
+                        Copy
+                      </button>
+                    </div>
+                  </div>
+              <div class="prereq-row">
+                    <strong>pipx</strong>
+                    <div class="code-block">
+                      <pre>pipx install aether-cache</pre>
+                      <button
+                        aria-label="Copy the pipx install command"
+                        class="copy-button"
+                        data-copy="pipx install aether-cache"
+                      >
+                        Copy
+                      </button>
+                    </div>
+                  </div>
+              <div class="prereq-row">
+                    <strong>pip (Python 3.10+)</strong>
+                    <div class="code-block">
+                      <pre>pip install aether-cache</pre>
+                      <button
+                        aria-label="Copy the pip install command"
+                        class="copy-button"
+                        data-copy="pip install aether-cache"
+                      >
+                        Copy
+                      </button>
+                    </div>
+                  </div>
+            </div>
           </div>
         </div>
       </section>
@@ -270,9 +317,18 @@ aether-cache setup"
               </p>
             </details>
             <details class="faq-item">
+              <summary>What are the ways to install it, and which should I use?</summary>
+              <p>
+                Most people should use the one-line installer at the top of this page. It installs everything it needs (uv, and through it Python), installs Aether Cache, and runs setup.
+              </p>
+              <p>
+                If you already manage Python tools yourself, use what you know: <code>uv tool install aether-cache</code>, <code>pipx install aether-cache</code>, or <code>pip install aether-cache</code> (Python 3.10 or newer), then run <code>aether-cache setup</code>. They all install the same version, and you don’t need Java for any of them.
+              </p>
+            </details>
+            <details class="faq-item">
               <summary>Do I need Java?</summary>
               <p>
-                No. The engine runs on Java 11 or newer. If you already have it, Aether Cache uses yours. If you don’t, <code>setup</code> downloads a private copy (about 50 MB) into <code>~/.aether-cache/java</code>, checks it against its published checksum, and uses it only for Aether Cache. Nothing is installed system-wide, and uninstalling removes it.
+                No. The engine runs on Java 11 or newer. If you already have it, Aether Cache uses yours. If you don’t, Aether Cache downloads a private copy (about 50 MB) into <code>~/.aether-cache/java</code> the first time it needs one, checks it against its published checksum, and uses it only for itself. Nothing is installed system-wide, and uninstalling removes it.
               </p>
             </details>
             <details class="faq-item">
@@ -446,6 +502,6 @@ aether-cache setup"
       id="copy-status"
       role="status"
     ></div>
-    <script defer="" src="assets/site.js?v=6"></script>
+    <script defer="" src="assets/site.js?v=7"></script>
   </body>
 </html>

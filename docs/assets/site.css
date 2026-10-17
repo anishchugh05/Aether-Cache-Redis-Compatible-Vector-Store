@@ -829,6 +829,37 @@ nav a {
 }
 .code-block pre {
   font-size: 12px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.install-step .prereq-note {
+  margin-top: 10px;
+}
+.prereq-note a,
+.other-ways a {
+  color: var(--ink);
+  text-underline-offset: 3px;
+}
+.other-ways {
+  margin-top: 44px;
+  padding-top: 28px;
+  border-top: 1px solid var(--line);
+  scroll-margin-top: 24px;
+}
+.other-ways h2 {
+  font-size: 18px;
+  line-height: 24px;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+.other-ways > p {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 8px 0 16px;
+  max-width: 60ch;
+}
+.other-ways .prereq-row + .prereq-row {
+  margin-top: 14px;
 }
 .copy-button {
   position: absolute;

@@ -100,12 +100,26 @@ m1 retired; m3 replaces it.
 
 ## Quick start
 
-You need [**uv**](https://docs.astral.sh/uv/) (`curl -LsSf https://astral.sh/uv/install.sh | sh`), which also takes
-care of Python for you. Then:
+One line installs everything and runs setup. On macOS or Linux:
+
+```sh
+curl -fsSL https://anishchugh05.github.io/Aether-Cache-Redis-Compatible-Vector-Store/install.sh | sh
+```
+
+On Windows (PowerShell):
+
+```powershell
+powershell -ExecutionPolicy ByPass -c "irm https://raw.githubusercontent.com/anishchugh05/Aether-Cache-Redis-Compatible-Vector-Store/main/docs/install.ps1 | iex"
+```
+
+The installer ([install.sh](docs/install.sh), [install.ps1](docs/install.ps1)) gets [uv](https://docs.astral.sh/uv/) if you
+don't have it (uv brings Python), installs Aether Cache, and runs `aether-cache setup`. Prefer your own tools? Any of
+these works, followed by `aether-cache setup`:
 
 ```sh
 uv tool install aether-cache
-aether-cache setup
+pipx install aether-cache
+pip install aether-cache        # Python 3.10+
 ```
 
 `setup` starts the engine in the background, downloads the embedding model once (about 90 MB), and connects every
@@ -116,7 +130,7 @@ repo and try:
 
 Then start a new session and ask how to run the tests.
 
-The engine runs on Java 11+. If you have it, it's used. If you don't, `setup` downloads a private copy (about
+The engine runs on Java 11+. If you have it, it's used. If you don't, Aether Cache downloads a private copy (about
 50 MB) into `~/.aether-cache/java`, checks it against its published checksum, and uses it only for Aether Cache;
 nothing is installed system-wide, and `aether-cache uninstall` removes it.
 
