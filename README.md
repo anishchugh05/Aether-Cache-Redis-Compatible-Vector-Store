@@ -108,6 +108,9 @@ repo and try:
 
 Then start a new session and ask how to run the tests.
 
+Already keep notes for your AI in `CLAUDE.md`, `AGENTS.md`, or Cursor rules? Run `aether-cache import` in the repo
+(or use **Import notes** in the dashboard) to turn them into memories, linked to the files they mention.
+
 Memories are kept per project (the git repo's folder name), so projects never mix. Everything stays on your machine:
 the engine only accepts connections from it, and your memories live in `~/.aether-cache`.
 
@@ -116,15 +119,18 @@ the engine only accepts connections from it, and your memories live in `~/.aethe
 | `aether-cache setup` | One-time setup: engine, model, and AI tools |
 | `aether-cache add` | Adds the repo you're in (or a path) so the dashboard can check its files; the dashboard can also find and add repos for you |
 | `aether-cache ui` | Opens the dashboard: see what your AI remembers, and confirm or retire memories whose files changed |
+| `aether-cache import` | Turns the notes in `CLAUDE.md`, `AGENTS.md`, and Cursor rules into memories; shows them first and asks |
+| `aether-cache export` | Saves memories, with their linked files and history, to a JSON file (`-p` for one project) |
 | `aether-cache status` | Is it running, and what's in this project's memory |
 | `aether-cache doctor` | Checks everything and tells you how to fix what's wrong |
 | `aether-cache list` / `recall "query"` / `explain m1` | Look at memories from the terminal |
 | `aether-cache sync` | Writes current memories into `AGENTS.md` / `CLAUDE.md` |
 | `aether-cache connect cursor` | Connects one tool (`--print` shows config for any other MCP tool) |
 | `aether-cache start` / `stop` | Runs or stops the engine (it also starts on its own when a tool needs it) |
+| `aether-cache uninstall` | Disconnects your AI tools, stops the engine, and asks before deleting memories |
 
 If `aether-cache` isn't found after installing, run `uv tool update-shell` and open a new terminal. Port 7380 taken?
-Set `AETHER_PORT` and run `setup` again. To uninstall: `aether-cache stop && uv tool uninstall aether-cache`.
+Set `AETHER_PORT` and run `setup` again. To uninstall: `aether-cache uninstall`, then `uv tool uninstall aether-cache`.
 
 ## Tools the AI can call
 
@@ -338,6 +344,7 @@ aether_cache/                the Python package behind the `aether-cache` comman
   connect.py                 registers Aether Cache with Claude Code, Cursor, and Codex
   cli.py                     the `aether-cache` command
   ui.py, ui/index.html       the dashboard (`aether-cache ui`): a local server, its API, and the page
+  portability.py             import from notes files, export to JSON
   engine/aether-engine.jar   the prebuilt engine (rebuild with `python scripts/build_engine.py`)
 memory_mcp/calibrate.py      similarity calibration for duplicate/contradiction thresholds
 vector_bench.py              HNSW benchmark (writes results.json)

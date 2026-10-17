@@ -66,6 +66,28 @@ def add_instructions(path: Path) -> str:
     return f"told it to use Aether Cache for project memory in {path}"
 
 
+def remove_instructions(path: Path) -> bool:
+    """Takes our section back out of an instruction file, leaving the rest exactly as it was.
+    Deletes the file only if our section was all that was in it. Returns whether anything changed."""
+    try:
+        old = path.read_text(encoding="utf-8")
+    except OSError:
+        return False
+    if INSTR_START not in old or INSTR_END not in old:
+        return False
+    before, after = old[:old.index(INSTR_START)], old[old.index(INSTR_END) + len(INSTR_END):]
+    new = before.rstrip() + ("\n\n" + after.lstrip("\n") if before.strip() and after.strip() else after.lstrip("\n"))
+    if not new.strip():
+        path.unlink()
+        return True
+    if not new.endswith("\n"):
+        new += "\n"
+    tmp = path.with_name(path.name + ".aether-tmp")
+    tmp.write_text(new, encoding="utf-8")
+    os.replace(tmp, path)
+    return True
+
+
 def claude_instructions_file() -> Path:
     return Path(os.environ.get("CLAUDE_CONFIG_DIR", Path.home() / ".claude")) / "CLAUDE.md"
 
@@ -93,6 +115,20 @@ def connect_claude_code() -> Tuple[bool, str]:
         return False, f"`claude mcp add` failed: {(out.stderr or out.stdout).strip()}"
     notes.append(add_instructions(claude_instructions_file()))
     return True, "Claude Code: connected for all projects (" + "; ".join(notes) + ")."
+
+
+def disconnect_claude_code() -> Tuple[bool, str]:
+    notes = []
+    if shutil.which("claude"):
+        removed = [scope for scope in ("user", "local")
+                   if _claude("mcp", "remove", NAME, "--scope", scope).returncode == 0]
+        if removed:
+            notes.append("removed the MCP server")
+        if _claude("mcp", "get", NAME).returncode == 0:
+            return False, "Claude Code: couldn't remove it. Run `claude mcp remove aether-cache` yourself."
+    if remove_instructions(claude_instructions_file()):
+        notes.append(f"removed our section from {claude_instructions_file()}")
+    return True, "Claude Code: disconnected" + (f" ({'; '.join(notes)})." if notes else " (it wasn't connected).")
 
 
 def claude_code_connected() -> bool:
@@ -128,6 +164,25 @@ def connect_cursor() -> Tuple[bool, str]:
     return True, f"Cursor: connected for all projects ({path}). Restart Cursor to pick it up."
 
 
+def disconnect_cursor() -> Tuple[bool, str]:
+    path = cursor_config()
+    try:
+        data = json.loads(path.read_text(encoding="utf-8") or "{}")
+    except OSError:
+        return True, "Cursor: disconnected (it wasn't connected)."
+    except json.JSONDecodeError as e:
+        return False, f"Cursor: couldn't read {path} ({e}). Remove the \"{NAME}\" entry yourself."
+    servers = data.get("mcpServers") if isinstance(data, dict) else None
+    if not isinstance(servers, dict) or NAME not in servers:
+        return True, "Cursor: disconnected (it wasn't connected)."
+    shutil.copyfile(path, path.with_name("mcp.json.bak"))
+    del servers[NAME]
+    tmp = path.with_name("mcp.json.aether-tmp")
+    tmp.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+    os.replace(tmp, path)
+    return True, f"Cursor: disconnected ({path}). Restart Cursor to pick it up."
+
+
 def cursor_connected() -> bool:
     try:
         return NAME in json.loads(cursor_config().read_text(encoding="utf-8")).get("mcpServers", {})
@@ -155,14 +210,7 @@ def _is_our_header(line: str) -> bool:
 def connect_codex() -> Tuple[bool, str]:
     path = codex_config()
     text = path.read_text(encoding="utf-8") if path.exists() else ""
-    # drop our old section (if any): from its header to the next table header
-    kept, skipping = [], False
-    for line in text.splitlines():
-        if line.strip().startswith("["):
-            skipping = _is_our_header(line)
-        if not skipping:
-            kept.append(line)
-    body = "\n".join(kept).rstrip()
+    body = _without_our_section(text)  # drop our old section (if any): from its header to the next table header
     new = (body + "\n\n" if body else "") + _codex_block()
     if path.exists():
         shutil.copyfile(path, path.with_name("config.toml.bak"))
@@ -172,6 +220,35 @@ def connect_codex() -> Tuple[bool, str]:
     os.replace(tmp, path)
     note = add_instructions(path.with_name("AGENTS.md"))  # Codex's instructions for every project
     return True, f"Codex: connected ({path}; {note})."
+
+
+def _without_our_section(text: str) -> str:
+    kept, skipping = [], False
+    for line in text.splitlines():
+        if line.strip().startswith("["):
+            skipping = _is_our_header(line)
+        if not skipping:
+            kept.append(line)
+    return "\n".join(kept).rstrip()
+
+
+def disconnect_codex() -> Tuple[bool, str]:
+    path = codex_config()
+    notes = []
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError:
+        text = ""
+    if any(_is_our_header(l) for l in text.splitlines()):
+        shutil.copyfile(path, path.with_name("config.toml.bak"))
+        body = _without_our_section(text)
+        tmp = path.with_name("config.toml.aether-tmp")
+        tmp.write_text(body + "\n" if body else "", encoding="utf-8")
+        os.replace(tmp, path)
+        notes.append(f"removed the MCP server from {path}")
+    if remove_instructions(path.with_name("AGENTS.md")):
+        notes.append(f"removed our section from {path.with_name('AGENTS.md')}")
+    return True, "Codex: disconnected" + (f" ({'; '.join(notes)})." if notes else " (it wasn't connected).")
 
 
 def codex_connected() -> bool:
@@ -192,4 +269,6 @@ def generic_instructions() -> str:
 
 
 CONNECTORS = {"claude-code": connect_claude_code, "cursor": connect_cursor, "codex": connect_codex}
+DISCONNECTORS = {"claude-code": disconnect_claude_code, "cursor": disconnect_cursor, "codex": disconnect_codex}
+LABELS = {"claude-code": "Claude Code", "cursor": "Cursor", "codex": "Codex"}
 CHECKS = {"claude-code": claude_code_connected, "cursor": cursor_connected, "codex": codex_connected}

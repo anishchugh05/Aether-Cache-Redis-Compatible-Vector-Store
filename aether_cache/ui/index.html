@@ -94,7 +94,7 @@ nav.rail {
 .project .meta { display: block; font-size: var(--t-xs); color: var(--rail-2); }
 .project .meta .hot { color: var(--rail-stale); }
 .project[aria-current="true"] { background: var(--rail-active); }
-.engine { display: flex; align-items: center; gap: var(--s2); margin-top: auto; padding: 14px 20px; font-size: var(--t-xs); color: var(--rail-2); border-top: 1px solid var(--rail-active); }
+.engine { display: flex; align-items: center; gap: var(--s2); padding: 14px 20px; font-size: var(--t-xs); color: var(--rail-2); border-top: 1px solid var(--rail-active); }
 .engine .dot { width: 7px; height: 7px; border-radius: 50%; background: #3BBF8E; flex-shrink: 0; }
 .engine.down .dot { background: var(--rail-stale); }
 .engine .ver { margin-left: auto; font-family: var(--mono); }
@@ -285,6 +285,53 @@ ol.timeline .details { font-size: var(--t-sm); color: var(--ink-2); margin: 1px 
   .head-links a:hover, .linkish:hover { color: var(--ink); text-decoration-color: currentColor; }
 }
 
+
+/* ---------- project actions, import, tools ---------- */
+.head-row { display: flex; gap: var(--s4); align-items: flex-start; justify-content: space-between; flex-wrap: wrap; }
+.head-row > div:first-child { min-width: 0; flex: 1 1 320px; }
+.btn.with-icon { display: inline-flex; align-items: center; gap: 6px; }
+.back { display: inline-flex; align-items: center; gap: 6px; margin-bottom: var(--s3); }
+.back svg { transform: scaleX(-1); }
+.file-h { display: flex; align-items: baseline; gap: var(--s2); margin: 0 0 var(--s2); font-size: var(--t-sm); font-weight: 600; }
+.file-h .mono { font-weight: 500; overflow-wrap: anywhere; }
+.file-h .n { color: var(--ink-2); font-weight: 400; font-size: var(--t-xs); }
+.file-group + .file-group { margin-top: var(--s5); }
+.pick { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 12px; align-items: start; padding: 12px 16px; cursor: pointer; transition: background-color 120ms ease; }
+.pick + .pick { border-top: 1px solid var(--rule); }
+.pick input { width: 16px; height: 16px; margin: 3px 0 0; accent-color: var(--fresh); cursor: pointer; }
+.pick .text { display: block; overflow-wrap: anywhere; }
+.pick .tags { display: flex; flex-wrap: wrap; gap: 2px 14px; margin-top: 3px; font-size: var(--t-xs); color: var(--ink-2); }
+.pick .tags .mono { font-size: 1em; overflow-wrap: anywhere; }
+.pick .tags .warn { color: var(--stale); }
+.pick .tags .linked { color: var(--fresh); }
+.import-bar {
+  position: sticky; bottom: 0; display: flex; gap: var(--s2); align-items: center; flex-wrap: wrap;
+  margin-top: var(--s5); padding: 14px 0; background: var(--ground); border-top: 1px solid var(--rule);
+}
+.import-bar .count { margin-right: auto; font-size: var(--t-sm); color: var(--ink-2); }
+.known-notes { margin-top: var(--s5); font-size: var(--t-sm); color: var(--ink-2); }
+.known-notes summary { cursor: pointer; width: fit-content; }
+.known-notes ul { margin: var(--s2) 0 0; padding-left: 20px; }
+.known-notes li { margin: 4px 0; overflow-wrap: anywhere; }
+#tools-view section { margin-top: 36px; }
+.select-links { display: flex; gap: var(--s3); margin: 0 0 var(--s3); }
+.rail-link {
+  display: flex; align-items: center; gap: 8px; width: calc(100% - 20px); margin: 0 10px 10px; padding: 8px 10px;
+  border: 0; border-radius: 6px; background: none; color: var(--rail-2); font-size: var(--t-sm); cursor: pointer; text-align: left;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+.rail-link[aria-current="true"] { background: var(--rail-active); color: var(--rail-ink); }
+.tool-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px; align-items: center; padding: 14px 18px; }
+.tool-row + .tool-row { border-top: 1px solid var(--rule); }
+.tool-row .name { font-weight: 500; }
+.tool-row .status { display: flex; align-items: center; gap: 8px; font-size: var(--t-xs); color: var(--ink-2); margin-top: 2px; }
+.tool-row .status .pip { margin-top: 0; }
+.cmd { display: block; font-family: var(--mono); font-size: var(--t-sm); background: var(--surface-2); border: 1px solid var(--rule); border-radius: 6px; padding: 9px 12px; margin: 6px 0 12px; overflow-wrap: anywhere; color: var(--ink); }
+@media (hover: hover) and (pointer: fine) {
+  .pick:not(.known):hover { background: var(--surface-2); }
+  .rail-link:hover { background: var(--rail-active); color: var(--rail-ink); }
+}
+
 /* ---------- small screens ---------- */
 @media (max-width: 900px) {
   .app, .app.has-detail { grid-template-columns: 1fr; grid-template-rows: auto 1fr; height: auto; min-height: 100vh; }
@@ -294,6 +341,7 @@ ol.timeline .details { font-size: var(--t-sm); color: var(--ink-2); margin: 1px 
   .projects { display: flex; gap: 4px; padding: 8px 8px 8px 0; overflow: visible; }
   .project { width: auto; max-width: 200px; padding: 6px 10px; }
   .add-project { width: auto; margin: 0 8px 0 0; flex-shrink: 0; white-space: nowrap; }
+  .rail-link { width: auto; margin: 0 8px 0 0; flex-shrink: 0; white-space: nowrap; }
   .page { padding: 20px 16px 56px; }
   .pair { grid-template-columns: 1fr; }
   aside.detail { position: fixed; inset: 0; z-index: 10; border-left: 0; }
@@ -335,6 +383,7 @@ const state = {
   memories: [], attention: null, selected: null, detail: null,
   version: "", engineUp: true, loadingList: false, listLoaded: false,
   view: "project", source: "local", discovered: null, discovering: false,
+  scan: null, picked: new Set(), tools: null,
 };
 const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -367,6 +416,9 @@ function icon(name, size = 14) {
     plus: '<path d="M8 3v10M3 8h10"/>',
     folder: '<path d="M2 4.5A1.5 1.5 0 0 1 3.5 3h2.6l1.5 1.5h4.9A1.5 1.5 0 0 1 14 6v5.5a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 2 11.5z"/>',
     check: '<path d="M3 8.5 6.5 12 13 4.5"/>',
+    import: '<path d="M8 2.5v8M4.5 7 8 10.5 11.5 7M3 13.5h10"/>',
+    export: '<path d="M8 10.5v-8M4.5 6 8 2.5 11.5 6M3 13.5h10"/>',
+    plug: '<path d="M6 2.5v3M10 2.5v3M4.5 5.5h7v2.5a3.5 3.5 0 0 1-7 0zM8 11.5v2"/>',
   };
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   svg.setAttribute("viewBox", "0 0 16 16"); svg.setAttribute("width", size); svg.setAttribute("height", size);
@@ -542,9 +594,9 @@ async function selectProject(name) {
 // ---------- add a project ----------
 function showView(view) {
   state.view = view;
-  document.getElementById("project-view").hidden = view !== "project";
-  document.getElementById("add-view").hidden = view !== "add";
-  if (view === "add") document.querySelector(".app").classList.remove("has-detail");
+  for (const v of ["project", "add", "import", "tools"]) document.getElementById(`${v}-view`).hidden = view !== v;
+  if (view !== "project") document.querySelector(".app").classList.remove("has-detail");
+  document.querySelector("main").scrollTop = 0;
   renderProjects();
 }
 
@@ -734,7 +786,7 @@ function renderEngine() {
 function renderProjects() {
   put(document.getElementById("projects"), state.projects.map((p) => {
     const total = p.counts.active + p.counts.stale + p.counts.retired + p.counts.superseded;
-    return h("li", {}, h("button", { class: "project", type: "button", "aria-current": state.view === "project" && p.name === state.project ? "true" : "false",
+    return h("li", {}, h("button", { class: "project", type: "button", "aria-current": (state.view === "project" || state.view === "import") && p.name === state.project ? "true" : "false",
                                      onclick: () => selectProject(p.name), title: p.name },
       h("span", { class: "name" }, p.name),
       h("span", { class: "meta" }, plural(total, "memory", "memories"),
@@ -744,6 +796,8 @@ function renderProjects() {
   if (heading) heading.hidden = !state.projects.length;
   const add = document.getElementById("add-project");
   if (add) add.setAttribute("aria-current", state.view === "add" ? "true" : "false");
+  const tools = document.getElementById("tools-link");
+  if (tools) tools.setAttribute("aria-current", state.view === "tools" ? "true" : "false");
 }
 
 const totalOf = (p) => p.counts.active + p.counts.stale + p.counts.retired + p.counts.superseded;
@@ -753,11 +807,188 @@ function renderHead() {
   if (!p) { put(document.getElementById("head")); return; }
   const remove = p.repo && totalOf(p) === 0
     ? h("button", { class: "linkish", type: "button", onclick: () => removeProject(p.name) }, "Remove from dashboard") : null;
-  put(document.getElementById("head"), h("h1", {}, p.name),
-    h("div", { class: "head-links" },
-      h("span", { class: "mono" }, p.repo ? pathNodes(p.repo) : "Repo location not known yet"),
-      p.github ? h("a", { href: `https://github.com/${p.github}`, target: "_blank", rel: "noopener noreferrer" }, `github.com/${p.github}`) : null,
-      remove));
+  const exp = h("button", { class: "btn with-icon", type: "button", onclick: () => exportMemories(p.name, exp) }, icon("export", 14), "Export");
+  put(document.getElementById("head"), h("div", { class: "head-row" },
+    h("div", {}, h("h1", {}, p.name),
+      h("div", { class: "head-links" },
+        h("span", { class: "mono" }, p.repo ? pathNodes(p.repo) : "Repo location not known yet"),
+        p.github ? h("a", { href: `https://github.com/${p.github}`, target: "_blank", rel: "noopener noreferrer" }, `github.com/${p.github}`) : null,
+        remove)),
+    h("div", { class: "actions" },
+      p.repo ? h("button", { class: "btn with-icon", type: "button", onclick: () => openImport() }, icon("import", 14), "Import notes") : null,
+      totalOf(p) ? exp : null)));
+}
+
+// ---------- export ----------
+async function exportMemories(project, button) {
+  if (button) button.disabled = true;
+  try {
+    const { filename, data } = await api(project ? `/api/export?project=${encodeURIComponent(project)}` : "/api/export");
+    const blob = new Blob([JSON.stringify(data, null, 2) + "\n"], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = h("a", { href: url, download: filename, hidden: true });
+    document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    const n = data.projects.reduce((sum, p) => sum + p.memories.length, 0);
+    notify(`Exported ${plural(n, "memory", "memories")} to ${filename}.`);
+  } catch (e) { notify(e.message); }
+  finally { if (button) button.disabled = false; }
+}
+
+// ---------- import ----------
+async function openImport() {
+  state.scan = null; state.picked = new Set();
+  showView("import");
+  renderImport();
+  document.querySelector("#import-view h1")?.focus();
+  try {
+    state.scan = await api(`/api/import/scan?project=${encodeURIComponent(state.project)}`);
+    state.picked = new Set(state.scan.notes.filter((n) => n.selected).map((n) => n.key));
+  } catch (e) {
+    notify(e.message); showView("project"); return;
+  }
+  renderImport();
+}
+
+async function runImport(button) {
+  button.disabled = true;
+  try {
+    const r = await api("/api/import", { project: state.project, keys: [...state.picked] });
+    const n = r.saved.length;
+    notify(`Imported ${plural(n, "memory", "memories")}.` + (r.duplicates ? ` ${r.duplicates} matched ones you already had.` : "")
+           + (r.conflicts ? ` ${plural(r.conflicts, "possible conflict")} to decide.` : ""));
+    showView("project");
+    await refreshAll();
+  } catch (e) { notify(e.message); button.disabled = false; }
+}
+
+function renderImport() {
+  const view = document.getElementById("import-view");
+  const back = h("button", { class: "linkish back", type: "button", onclick: () => showView("project") }, icon("arrow", 12), state.project);
+  const head = h("div", { class: "page-head" }, back,
+    h("h1", { tabindex: "-1" }, "Import notes"),
+    h("p", { class: "lede", style: "margin-top:6px" },
+      "These are the notes your AI tools already read in this repo. Pick the ones worth keeping as memories. Notes that mention files get linked to them, so they’re flagged when those files change."));
+  const s = state.scan;
+  if (!s) {
+    put(view, head, h("div", { class: "panel skeleton", "aria-busy": "true", "aria-label": "Reading notes files" },
+      [70, 52, 62].map((w, i) => h("div", { class: "pick", style: i ? "border-top:1px solid var(--rule)" : "" },
+        h("span"), h("span", { class: "bar", style: `width:${w}%` })))));
+    return;
+  }
+  if (!s.files.length || !s.notes.length) {
+    put(view, head, h("div", { class: "panel note" },
+      h("p", {}, h("strong", {}, s.files.length ? "No notes to import. " : "No notes files found. "),
+        s.files.length ? "The notes files here have nothing that reads like a fact yet."
+                       : "Aether Cache looks for CLAUDE.md, AGENTS.md, .cursorrules, .cursor/rules/, and .github/copilot-instructions.md in "),
+      s.files.length ? null : h("p", { class: "mono" }, pathNodes(s.root))),
+      h("div", { class: "import-bar" }, h("span", { class: "count" }), h("button", { class: "btn", type: "button", onclick: () => showView("project") }, "Back")));
+    return;
+  }
+  const selectable = s.notes.filter((n) => !n.known);
+  const count = h("span", { class: "count", "aria-live": "polite" });
+  const go = h("button", { class: "btn primary", type: "button", onclick: () => runImport(go) });
+  const sync = () => {
+    const n = state.picked.size;
+    count.textContent = `${n} of ${plural(selectable.length, "note")} selected`;
+    go.textContent = n ? `Import ${plural(n, "memory", "memories")}` : "Import";
+    go.disabled = !n;
+  };
+  const boxes = [];
+  const pickRow = (n) => {
+    const box = h("input", { type: "checkbox", checked: state.picked.has(n.key), "data-key": n.key, "aria-describedby": `t-${n.key}` });
+    box.addEventListener("change", () => { box.checked ? state.picked.add(n.key) : state.picked.delete(n.key); sync(); });
+    boxes.push(box);
+    const tags = [
+      n.files.length ? h("span", { class: "linked" }, "Linked to ", n.files.map((p, i) => [i ? ", " : "", h("span", { class: "mono" }, pathNodes(p))])) : null,
+      n.missing.length ? h("span", { class: "warn" }, "Mentions ", n.missing.map((p, i) => [i ? ", " : "", h("span", { class: "mono" }, pathNodes(p))]),
+                           n.missing.length === 1 ? ", which doesn’t exist. Probably out of date." : ", which don’t exist. Probably out of date.") : null,
+    ].filter(Boolean);
+    return h("label", { class: "pick" }, box,
+      h("span", {}, h("span", { class: "text", id: `t-${n.key}` }, richText(n.text)), tags.length ? h("span", { class: "tags" }, tags) : null));
+  };
+  const groups = s.files.map((f) => {
+    const notes = selectable.filter((n) => n.file === f.path);
+    if (!notes.length) return null;
+    return h("section", { class: "file-group", "aria-label": f.path },
+      h("h2", { class: "file-h" }, h("span", { class: "mono" }, pathNodes(f.path)), h("span", { class: "n" }, plural(notes.length, "new note"))),
+      h("div", { class: "panel" }, notes.map(pickRow)));
+  });
+  const known = s.notes.filter((n) => n.known);
+  const knownList = known.length ? h("details", { class: "known-notes" },
+    h("summary", {}, `${plural(known.length, "note")} already remembered`),
+    h("ul", {}, known.map((n) => h("li", {}, richText(n.text))))) : null;
+  if (!selectable.length) {
+    put(view, head, h("div", { class: "panel calm" }, pip("active"),
+      h("span", {}, h("strong", {}, "Nothing new to import. "), "Every note in these files is already a memory.")),
+      knownList,
+      h("div", { class: "import-bar" }, h("span", { class: "count" }), h("button", { class: "btn", type: "button", onclick: () => showView("project") }, "Back")));
+    return;
+  }
+  const setAll = (on) => { boxes.forEach((b) => { b.checked = on; on ? state.picked.add(b.dataset.key) : state.picked.delete(b.dataset.key); }); sync(); };
+  put(view, head,
+    selectable.length > 1 ? h("div", { class: "select-links" },
+      h("button", { class: "linkish", type: "button", onclick: () => setAll(true) }, "Select all"),
+      h("button", { class: "linkish", type: "button", onclick: () => setAll(false) }, "Select none")) : null,
+    groups, knownList,
+    h("div", { class: "import-bar" }, count, h("button", { class: "btn", type: "button", onclick: () => showView("project") }, "Cancel"), go));
+  sync();
+}
+
+// ---------- AI tools ----------
+async function openTools() {
+  showView("tools");
+  renderTools();
+  document.querySelector("#tools-view h1")?.focus();
+  try { state.tools = await api("/api/tools"); } catch (e) { notify(e.message); }
+  renderTools();
+}
+
+async function toolAction(tool, action, button) {
+  button.disabled = true;
+  try {
+    const r = await api(`/api/tools/${action}`, { tool: tool.id });
+    notify(r.message);
+    state.tools = await api("/api/tools");
+    renderTools();
+  } catch (e) { notify(e.message); button.disabled = false; }
+}
+
+function renderTools() {
+  const view = document.getElementById("tools-view");
+  const t = state.tools;
+  const head = h("div", { class: "page-head" },
+    h("h1", { tabindex: "-1" }, "AI tools"),
+    h("p", { class: "lede", style: "margin-top:6px" },
+      "Aether Cache is connected to these tools so they save and recall project memories. Disconnecting removes only what Aether Cache added to the tool’s settings. Your memories stay."));
+  if (!t) {
+    put(view, head, h("div", { class: "panel calm" }, "Checking your AI tools…"));
+    return;
+  }
+  const rows = t.tools.map((tool) => {
+    const word = tool.connected ? "Connected" : tool.installed ? "Not connected" : "Not installed";
+    const btn = tool.connected
+      ? h("button", { class: "btn", type: "button", onclick: () => toolAction(tool, "disconnect", btn) }, "Disconnect")
+      : tool.installed ? h("button", { class: "btn", type: "button", onclick: () => toolAction(tool, "connect", btn) }, "Connect") : h("span");
+    return h("div", { class: "tool-row" },
+      h("div", {}, h("span", { class: "name" }, tool.label),
+        h("span", { class: "status" }, pip(tool.connected ? "active" : "retired"), word)),
+      btn);
+  });
+  const exp = h("button", { class: "btn with-icon", type: "button", onclick: () => exportMemories(null, exp) }, icon("export", 14), "Export all memories");
+  put(view, head,
+    h("div", { class: "panel" }, rows),
+    h("section", { "aria-labelledby": "backup-h" },
+      h("h2", { class: "section", id: "backup-h" }, "Keep a copy"),
+      h("p", { class: "lede" }, "Download every project’s memories, with their linked files and history, as one JSON file."),
+      exp),
+    h("section", { "aria-labelledby": "uninstall-h" },
+      h("h2", { class: "section", id: "uninstall-h" }, "Uninstall"),
+      h("div", { class: "panel note" },
+        h("p", {}, "To remove Aether Cache completely, run this in a terminal. It disconnects every tool, stops the engine, and asks before deleting your memories."),
+        h("code", { class: "cmd" }, "aether-cache uninstall"),
+        h("p", {}, "Then remove the program itself:"),
+        h("code", { class: "cmd" }, t.uninstall))));
 }
 
 function renderAttention() {
@@ -928,8 +1159,13 @@ function renderShell() {
       h("h2", { id: "projects-h" }, "Projects"),
       h("ul", { class: "projects", id: "projects" }),
       h("button", { class: "add-project", id: "add-project", type: "button", onclick: () => openAdd(false) }, icon("plus", 14), "Add project"),
+      h("div", { style: "margin-top:auto" }),
+      h("button", { class: "rail-link", id: "tools-link", type: "button", onclick: () => openTools() }, icon("plug", 14), "AI tools"),
       h("div", { class: "engine", id: "engine", role: "status" })),
-    h("main", {}, h("div", { class: "page", id: "add-view", hidden: true }), h("div", { class: "page", id: "project-view" },
+    h("main", {}, h("div", { class: "page", id: "add-view", hidden: true }),
+      h("div", { class: "page", id: "import-view", hidden: true }),
+      h("div", { class: "page", id: "tools-view", hidden: true }),
+      h("div", { class: "page", id: "project-view" },
       h("div", { class: "page-head", id: "head" }),
       h("section", { id: "attention", "aria-labelledby": "attention-h" }),
       h("section", { "aria-labelledby": "mem-h" },

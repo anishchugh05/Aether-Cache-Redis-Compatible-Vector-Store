@@ -131,6 +131,19 @@ def embed(text: str) -> List[str]:
     return [f"{x:.6f}" for x in vec]
 
 
+def embed_many(texts: List[str]) -> List[List[str]]:
+    """Like embed, for many texts at once (the model is much faster in batches)."""
+    if config.FAKE_EMBEDDER:
+        vecs = [fake_embed(t) for t in texts]
+    else:
+        try:
+            vecs = [v.tolist() for v in embedder().embed(texts)]
+        except Exception as e:
+            raise EngineDown(f"the embedding model couldn't be loaded ({e}). The first run downloads it "
+                             f"(about 90 MB), so check your internet connection.")
+    return [[f"{x:.6f}" for x in v] for v in vecs]
+
+
 def warm_up() -> None:
     """Starts the engine and loads the model in the background, so the AI's first call is fast."""
     def work():

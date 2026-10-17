@@ -18,7 +18,7 @@ from urllib.parse import parse_qs, urlparse
 
 import redis
 
-from . import __version__, config, engine, server
+from . import __version__, config, connect, engine, portability, server
 from . import repos as repo_tools
 
 PAGE = Path(__file__).resolve().parent / "ui" / "index.html"
@@ -245,6 +245,72 @@ def api_resolve(_q, body) -> dict:
     return {"ok": True}
 
 
+def _repo_or_error(project: str) -> Path:
+    repo = repo_for(project)
+    if repo is None:
+        raise ApiError(409, f"The dashboard doesn't know where the {project} folder is yet. "
+                            f"Add it with Add project, then try again.")
+    return repo
+
+
+def api_import_scan(q, _body) -> dict:
+    project = _need(q, "project")
+    try:
+        return portability.scan(project, _repo_or_error(project))
+    except portability.NotesError as e:
+        raise ApiError(400, str(e))
+
+
+def api_import(_q, body) -> dict:
+    project = _need(body, "project")
+    keys = body.get("keys")
+    if not isinstance(keys, list) or not all(isinstance(k, str) for k in keys):
+        raise ApiError(400, "Missing keys.")
+    try:
+        return portability.apply(project, _repo_or_error(project), keys)
+    except portability.NotesError as e:
+        raise ApiError(400, str(e))
+
+
+def api_export(q, _body) -> dict:
+    project = q.get("project") or None
+    return {"filename": portability.export_filename(project),
+            "data": portability.export([project] if project else None)}
+
+
+def api_tools(_q, _body) -> dict:
+    installed = connect.detected()
+    return {"tools": [{"id": t, "label": connect.LABELS[t], "installed": t in installed,
+                       "connected": connect.CHECKS[t]()} for t in connect.TOOLS],
+            "uninstall": _uninstall_command()}
+
+
+def _tool(body) -> str:
+    tool = _need(body, "tool")
+    if tool not in connect.TOOLS:
+        raise ApiError(400, "Unknown tool.")
+    return tool
+
+
+def api_tool_connect(_q, body) -> dict:
+    done, message = connect.CONNECTORS[_tool(body)]()
+    if not done:
+        raise ApiError(409, message)
+    return {"message": message}
+
+
+def api_tool_disconnect(_q, body) -> dict:
+    done, message = connect.DISCONNECTORS[_tool(body)]()
+    if not done:
+        raise ApiError(409, message)
+    return {"message": message}
+
+
+def _uninstall_command() -> str:
+    from .cli import _uninstall_command as cmd
+    return cmd()
+
+
 def _need(d: dict, key: str) -> str:
     value = d.get(key)
     if not value or not isinstance(value, str):
@@ -264,6 +330,12 @@ ROUTES = {
     ("POST", "/api/projects/add"): api_add,
     ("POST", "/api/projects/remove"): api_remove,
     ("POST", "/api/pick-folder"): api_pick,
+    ("GET", "/api/import/scan"): api_import_scan,
+    ("POST", "/api/import"): api_import,
+    ("GET", "/api/export"): api_export,
+    ("GET", "/api/tools"): api_tools,
+    ("POST", "/api/tools/connect"): api_tool_connect,
+    ("POST", "/api/tools/disconnect"): api_tool_disconnect,
 }
 
 
