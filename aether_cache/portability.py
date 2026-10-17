@@ -66,13 +66,29 @@ def _clean(text: str) -> str:
     return text
 
 
-BULLET = re.compile(r"^(\s*)(?:[-*+]|\d+[.)])\s+(?:\[[ xX]\]\s+)?(.*)$")
+BULLET = re.compile(r"^(\s*)([-*+]|\d+[.)])\s+(\[[ xX]\]\s+)?(.*)$")
 HEADING = re.compile(r"^(#{1,6})\s+(.*?)\s*#*\s*$")
+TODO = re.compile(r"(?i)^(todo|fixme|xxx|hack|wip)\b")
+# Words and marks that make a line read like a fact about the project ("we use", "never", a `command`, a number)
+SIGNAL = re.compile(r"(?i)`|\d|/|\b(always|never|must|should|don'?t|do not|use[sd]?|using|prefer|avoid|requires?|"
+                    r"required|needs?|is|are|was|were|runs?|lives?|goes|stored?|keeps?|has|have|only|instead)\b")
+# Lines about the notes file itself, or pleasantries, rather than about the project
+META = re.compile(r"(?i)\b(read this|this (file|doc|document|guide|readme)|these (notes|instructions|rules|docs)|"
+                  r"seriously|have fun|good luck|thank you|thanks)\b")
 
 
-def split_notes(text: str) -> List[str]:
-    """Markdown -> one string per bullet or paragraph, each carrying the context it needs to stand alone:
-    the section heading ("Testing: run make test"), or the line that introduced a nested list."""
+def _step(item: dict) -> str:
+    """A numbered step plus anything nested under it: "Build: run uv build; check dist/"."""
+    text = item["text"].rstrip(":").rstrip()
+    details = [d.rstrip(".") for d in item["details"] if d and not TODO.match(d)]
+    return f"{text}: {'; '.join(details)}" if details else text
+
+
+def split_notes(text: str) -> List[dict]:
+    """Markdown -> one note per bullet or paragraph, each carrying the context it needs to stand alone: the
+    section heading ("Testing: run make test"), or the line that introduced a nested list. A numbered list of
+    short steps is one procedure, so it becomes one note. TODOs and checklist items are skipped. Notes that
+    don't read like a fact about the project are marked weak (offered, but not selected by default)."""
     text = _strip_managed(text.replace("\r\n", "\n"))
     text = re.sub(r"<!--.*?-->", "", text, flags=re.S)
     if text.startswith("---\n"):  # front matter (Cursor .mdc rules)
@@ -80,20 +96,38 @@ def split_notes(text: str) -> List[str]:
         if end != -1:
             text = text[end + 4:]
 
-    notes: List[str] = []
+    notes: List[dict] = []
     heading = ""
     intro: List[tuple] = []  # (indent, text) of lines ending in ":" that introduce the list below them
     para: List[str] = []
     bullet: Optional[dict] = None
+    steps: Optional[dict] = None  # a numbered list being collected: {"indent", "context", "items"}
     in_code = False
 
     def emit(body: str, context: str) -> None:
         body = _clean(body)
+        if not body or TODO.match(body):
+            return
         context = context or heading
         if context and not body.lower().startswith(context.lower()):
             body = f"{context}: {body}"
         if MIN_NOTE <= len(body) <= MAX_NOTE and re.search(r"[A-Za-z]{3}", body):
-            notes.append(body)
+            weak = bool(META.search(body)) or (not context and not SIGNAL.search(body))
+            notes.append({"text": body, "weak": weak})
+
+    def flush_steps() -> None:
+        nonlocal steps
+        if steps:
+            items = [_step(i) for i in steps["items"]]
+            items = [t for t in items if t and not TODO.match(t)]
+            short = items and (min(map(len, items)) < 30 or sum(map(len, items)) / len(items) < 45)
+            joined = " ".join(f"{i}. {t if t[-1] in '.!?' else t + '.'}" for i, t in enumerate(items, 1))
+            if len(items) > 1 and short and len(joined) <= MAX_NOTE:
+                emit(joined, steps["context"])  # short steps only make sense together
+            else:
+                for t in items:
+                    emit(t, steps["context"])  # longer items are separate rules that happen to be numbered
+            steps = None
 
     def flush_para() -> None:
         nonlocal para
@@ -106,34 +140,52 @@ def split_notes(text: str) -> List[str]:
             para = []
 
     def flush_bullet() -> None:
-        nonlocal bullet
-        if bullet:
-            body = _clean(" ".join(bullet["lines"]))
-            if body.endswith(":"):
-                intro.append((bullet["indent"], body[:-1]))
-            else:
-                emit(body, bullet["context"])
-            bullet = None
+        nonlocal bullet, steps
+        if not bullet:
+            return
+        b, bullet = bullet, None
+        if b["checkbox"]:
+            return  # a checklist item is a task, not a fact
+        body = _clean(" ".join(b["lines"]))
+        if steps and b["indent"] > steps["indent"] and steps["items"]:
+            steps["items"][-1]["details"].append(body)  # a detail nested under a step
+            return
+        if body.endswith(":") and not b["ordered"]:
+            flush_steps()
+            intro.append((b["indent"], body[:-1]))
+        elif b["ordered"]:
+            if steps and (steps["indent"] != b["indent"] or steps["context"] != b["context"]):
+                flush_steps()
+            if not steps:
+                steps = {"indent": b["indent"], "context": b["context"], "items": []}
+            steps["items"].append({"text": body, "details": []})
+        else:
+            if steps and b["indent"] <= steps["indent"]:
+                flush_steps()
+            emit(body, b["context"])
+
+    def flush_all() -> None:
+        flush_para(); flush_bullet(); flush_steps()
 
     for line in text.split("\n"):
         stripped = line.strip()
         if stripped.startswith(("```", "~~~")):
-            flush_para(); flush_bullet()
+            flush_para(); flush_bullet()  # a code block inside a numbered list doesn't end the list
             in_code = not in_code
             continue
         if in_code:
             continue
         m = HEADING.match(line)
         if m:
-            flush_para(); flush_bullet()
+            flush_all()
             intro.clear()
             heading = _clean(m.group(2)) if len(m.group(1)) >= 2 else ""
             continue
         if not stripped:
-            flush_para(); flush_bullet()
+            flush_para(); flush_bullet()  # numbered lists often have blank lines between steps
             continue
         if stripped.startswith("|") or re.fullmatch(r"[-*_]{3,}", stripped):  # tables, horizontal rules
-            flush_para(); flush_bullet()
+            flush_all()
             continue
         if stripped.startswith(">"):
             line = stripped.lstrip("> ")
@@ -144,16 +196,20 @@ def split_notes(text: str) -> List[str]:
             indent = len(b.group(1).expandtabs(4))
             while intro and intro[-1][0] >= indent:
                 intro.pop()
-            bullet = {"indent": indent, "lines": [b.group(2)], "context": intro[-1][1] if intro else ""}
+            bullet = {"indent": indent, "lines": [b.group(4)], "context": intro[-1][1] if intro else "",
+                      "ordered": b.group(2)[0].isdigit(), "checkbox": bool(b.group(3))}
             continue
         if bullet and line[:1] in (" ", "\t"):
             bullet["lines"].append(stripped)  # a bullet's wrapped continuation line
             continue
-        flush_bullet()
+        if steps and not bullet and line[:1] in (" ", "\t"):
+            steps["items"][-1]["text"] += " " + stripped  # a step's continuation after a blank line
+            continue
+        flush_bullet(); flush_steps()
         if not para:
             intro.clear()  # a new paragraph ends whatever list came before it
         para.append(stripped)
-    flush_para(); flush_bullet()
+    flush_all()
     return notes
 
 
@@ -198,8 +254,9 @@ def _key(file: str, text: str) -> str:
 
 
 def scan(project: str, root: Path) -> dict:
-    """Everything import would bring in from this repo's notes files, tagged for review:
-    known (already remembered), missing (mentions a file that doesn't exist, so probably already stale)."""
+    """Everything import would bring in from this repo's notes files, tagged for review: known (already
+    remembered), missing (mentions a file that doesn't exist, so probably already stale), weak (doesn't read
+    like a fact about the project). Only notes with none of these are selected by default."""
     if not root.is_dir():
         raise NotesError(f"{root} isn't a folder.")
     existing = set()
@@ -214,7 +271,8 @@ def scan(project: str, root: Path) -> dict:
         except OSError:
             continue
         count = 0
-        for note in split_notes(text):
+        for found in split_notes(text):
+            note = found["text"]
             n, body = _norm(note), _norm(note.split(": ", 1)[-1])  # with and without its section heading
             if n in seen or body in seen:
                 continue  # the same note twice, e.g. in CLAUDE.md and in a Cursor rule
@@ -222,8 +280,8 @@ def scan(project: str, root: Path) -> dict:
             linked, missing = mentioned_paths(note, root, skip=rels)
             known = n in existing or body in existing
             notes.append({"key": _key(rel, note), "text": note, "file": rel, "files": linked,
-                          "missing": missing, "known": known,
-                          "selected": not known and not missing})
+                          "missing": missing, "known": known, "weak": found["weak"],
+                          "selected": not known and not missing and not found["weak"]})
             count += 1
         per_file.append({"path": rel, "notes": count})
     return {"project": project, "root": str(root), "files": per_file, "notes": notes}

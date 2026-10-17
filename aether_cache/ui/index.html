@@ -903,6 +903,7 @@ function renderImport() {
       n.files.length ? h("span", { class: "linked" }, "Linked to ", n.files.map((p, i) => [i ? ", " : "", h("span", { class: "mono" }, pathNodes(p))])) : null,
       n.missing.length ? h("span", { class: "warn" }, "Mentions ", n.missing.map((p, i) => [i ? ", " : "", h("span", { class: "mono" }, pathNodes(p))]),
                            n.missing.length === 1 ? ", which doesn’t exist. Probably out of date." : ", which don’t exist. Probably out of date.") : null,
+      n.weak && !n.missing.length ? h("span", {}, "Doesn’t look like a fact about the project, so it’s unchecked.") : null,
     ].filter(Boolean);
     return h("label", { class: "pick" }, box,
       h("span", {}, h("span", { class: "text", id: `t-${n.key}` }, richText(n.text)), tags.length ? h("span", { class: "tags" }, tags) : null));

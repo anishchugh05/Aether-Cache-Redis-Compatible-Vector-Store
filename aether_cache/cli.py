@@ -225,23 +225,24 @@ def cmd_import(args) -> int:
         return 0
     notes = found["notes"]
     new = [n for n in notes if n["selected"]]
-    missing = [n for n in notes if not n["known"] and n["missing"]]
+    left_out = [n for n in notes if not n["known"] and not n["selected"]]
     known = [n for n in notes if n["known"]]
     print(f"Found {len(notes)} notes in " + ", ".join(f["path"] for f in found["files"]) + f" ({project})\n")
     for i, n in enumerate(new, 1):
         print(f"  {i:>3}. {n['text']}" + (f"\n       linked to {', '.join(n['files'])}" if n["files"] else ""))
-    if missing:
-        print(f"\nLeft out: {len(missing)} that {'mentions a file' if len(missing) == 1 else 'mention files'} "
-              f"that no longer {'exists' if len(missing) == 1 else 'exist'} (probably out of date):")
-        for n in missing:
-            print(f"     - {n['text']}\n       {', '.join(n['missing'])} not found")
+    if left_out:
+        print(f"\nLeft out ({len(left_out)}):")
+        for n in left_out:
+            why = (f"mentions {', '.join(n['missing'])}, which doesn't exist (probably out of date)"
+                   if n["missing"] else "doesn't look like a fact about the project")
+            print(f"     - {n['text']}\n       {why}")
     if known:
         print(f"\nAlready remembered: {len(known)}")
     if not new:
         print("\nNothing new to import.")
         return 0
-    if missing:
-        print("\nTo pick notes one by one, including the left-out ones, use Import in `aether-cache ui`.")
+    if left_out:
+        print("\nTo pick notes one by one, including the left-out ones, use Import notes in `aether-cache ui`.")
     if not args.yes and not _ask(f"\nImport {len(new)} {'memory' if len(new) == 1 else 'memories'} into {project}?"):
         print("Nothing imported." + ("" if sys.stdin.isatty() else " Pass --yes to import without asking."))
         return 0
