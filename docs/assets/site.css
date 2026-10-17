@@ -1060,7 +1060,11 @@ td:last-child {
 }
 .footer-links {
   display: flex;
-  gap: 24px;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+}
+.footer-links > * {
+  white-space: nowrap;
 }
 .footer a {
   text-decoration: none;
