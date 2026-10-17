@@ -224,7 +224,7 @@ def start(wait: float = 60) -> str:
             upgraded = True
         if state == "other":
             raise EngineError(port_taken_message())
-        java, _ = find_java()
+        java = _java_or_download()
         note = _migrate_old_data()
         config.DATA_DIR.mkdir(parents=True, exist_ok=True)
         command = [java, "-Xmx1g", "-jar", str(JAR),
@@ -262,6 +262,31 @@ def start(wait: float = 60) -> str:
                 raise EngineError(port_taken_message())
             time.sleep(0.2)
         raise EngineError(f"The engine didn't answer within {int(wait)} seconds. See {config.LOG_FILE}.")
+
+
+def _java_or_download() -> str:
+    """Java for starting the engine. If there isn't any, downloads Aether Cache's private copy, so the engine
+    also starts for people whose AI tool runs the server without `aether-cache setup` having run first.
+    Called while holding the start lock, so several sessions starting at once download it only once."""
+    try:
+        return find_java()[0]
+    except EngineError as missing:
+        if os.environ.get("AETHER_NO_JAVA_DOWNLOAD"):
+            raise
+        from . import javart
+        notice = (f"{str(missing).splitlines()[0]} Downloading a private copy of Java {javart.FEATURE_VERSION} "
+                  f"for Aether Cache into {javart.JAVA_DIR} (about 50 MB, only the first time).")
+        print(notice, file=sys.stderr, flush=True)  # stderr: stdout carries the MCP protocol
+        try:
+            with open(config.LOG_FILE, "a") as log:
+                log.write(f"\n{time.strftime('%Y-%m-%d %H:%M:%S')} {notice}\n")
+        except OSError:
+            pass
+        try:
+            javart.download(progress=lambda done, total: None)
+        except javart.JavaDownloadError as e:
+            raise EngineError(f"{str(missing).splitlines()[0]}\n{e}")
+        return find_java()[0]
 
 
 def ensure_running() -> None:

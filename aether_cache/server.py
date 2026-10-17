@@ -16,7 +16,7 @@ from typing import List, Optional
 
 import redis
 
-from . import config, engine
+from . import __version__, config, engine
 
 try:
     from mcp.server.mcpserver import MCPServer  # mcp 2.x
@@ -39,10 +39,14 @@ INSTRUCTIONS = (
     "replace_memory."
 )
 
-mcp = MCPServer(
-    "aether-cache",
-    instructions=INSTRUCTIONS,
-)
+try:
+    mcp = MCPServer("aether-cache", instructions=INSTRUCTIONS, version=__version__)
+except Exception:  # mcp 1.x has no version argument; set it on the underlying server instead
+    mcp = MCPServer("aether-cache", instructions=INSTRUCTIONS)
+    try:
+        mcp._mcp_server.version = __version__
+    except AttributeError:
+        pass
 
 def quiet_libraries() -> None:
     """Hides the download libraries' request logs, warnings and progress bars, which otherwise flood the

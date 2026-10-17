@@ -4,6 +4,8 @@
 
 **Shared memory for AI coding tools that stays true to your code.**
 
+<!-- mcp-name: io.github.anishchugh05/aether-cache -->
+
 **[Website](https://anishchugh05.github.io/Aether-Cache-Redis-Compatible-Vector-Store/)** · **[PyPI](https://pypi.org/project/aether-cache/)**
 
 Claude Code, Cursor, and other AI tools each forget your project between sessions, and when they do remember things,
