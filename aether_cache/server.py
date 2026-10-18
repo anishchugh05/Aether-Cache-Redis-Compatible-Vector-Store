@@ -98,7 +98,8 @@ def run(*args):
 
 
 def store_down(error: Exception) -> str:
-    return f"Aether Cache hit a problem: {error}\nRun `aether-cache doctor` in a terminal for help."
+    return (f"Aether Cache hit a problem: {error}\nRun `aether-cache doctor` in a terminal for help, "
+            f"or tell us at {config.CONTACT_URL}")
 
 
 def fake_embed(text: str, dim: int = 384) -> List[float]:
@@ -130,8 +131,8 @@ def embed(text: str) -> List[str]:
         try:
             vec = next(iter(embedder().embed([text]))).tolist()
         except Exception as e:
-            raise EngineDown(f"the embedding model couldn't be loaded ({e}). The first run downloads it "
-                             f"(about 90 MB), so check your internet connection.")
+            raise EngineDown(f"the embedding model couldn't be loaded ({e}). The first run downloads it from "
+                             f"Hugging Face (huggingface.co, about 90 MB), so check that your network allows it.")
     return [f"{x:.6f}" for x in vec]
 
 
@@ -143,8 +144,8 @@ def embed_many(texts: List[str]) -> List[List[str]]:
         try:
             vecs = [v.tolist() for v in embedder().embed(texts)]
         except Exception as e:
-            raise EngineDown(f"the embedding model couldn't be loaded ({e}). The first run downloads it "
-                             f"(about 90 MB), so check your internet connection.")
+            raise EngineDown(f"the embedding model couldn't be loaded ({e}). The first run downloads it from "
+                             f"Hugging Face (huggingface.co, about 90 MB), so check that your network allows it.")
     return [[f"{x:.6f}" for x in v] for v in vecs]
 
 

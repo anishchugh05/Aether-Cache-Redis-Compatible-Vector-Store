@@ -19,17 +19,24 @@ function Find-Uv {
     return $null
 }
 
+$ContactUrl = "https://anishchugh05.github.io/Aether-Cache-Redis-Compatible-Vector-Store/install.html#contact"
+
+function Fail($message) {
+    Write-Host $message -ForegroundColor Red
+    Write-Host "Still stuck? Tell us: $ContactUrl"
+}
+
 function Install-AetherCache {
     Write-Host "Installing Aether Cache"
     Write-Host ""
 
     $uv = Find-Uv
     if (-not $uv) {
-        Write-Host "uv isn't installed, so installing it first (https://docs.astral.sh/uv/)..."
+        Write-Host "uv isn't installed, so installing it first (from astral.sh, https://docs.astral.sh/uv/)..."
         Invoke-RestMethod https://astral.sh/uv/install.ps1 | Invoke-Expression
         $uv = Find-Uv
         if (-not $uv) {
-            Write-Host "uv was installed but can't be found yet. Open a new terminal and run this again." -ForegroundColor Red
+            Fail "uv was installed but can't be found yet. Open a new terminal and run this again."
             return
         }
         Write-Host ""
@@ -41,10 +48,12 @@ function Install-AetherCache {
         Write-Host "Aether Cache is already installed. Upgrading it to the latest version..."
         & $uv tool upgrade aether-cache
     } else {
-        & $uv tool install aether-cache
+        # Python 3.12, which uv downloads if needed: the newest Python releases can be ahead of the libraries
+        # Aether Cache uses, and this keeps the install working whatever Python the computer already has.
+        & $uv tool install --python 3.12 aether-cache
     }
     if ($LASTEXITCODE -ne 0) {
-        Write-Host "Installing Aether Cache failed (see above)." -ForegroundColor Red
+        Fail "Installing Aether Cache failed (see above)."
         return
     }
     & $uv tool update-shell *> $null  # so `aether-cache` works in new terminals
@@ -55,7 +64,7 @@ function Install-AetherCache {
     } else {
         & $exe setup
         if ($LASTEXITCODE -ne 0) {
-            Write-Host "Setup didn't finish. Fix the problem above, then run 'aether-cache setup'." -ForegroundColor Red
+            Fail "Setup didn't finish. Fix the problem above, then run 'aether-cache setup'."
             return
         }
     }

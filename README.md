@@ -385,7 +385,7 @@ crash_test.py                kill -9 crash-safety test
 Bump the version in `pyproject.toml`, `aether_cache/__init__.py`, and `server.json`, commit, then:
 
 ```sh
-git tag v0.1.7 && git push --tags
+git tag v0.1.8 && git push --tags
 ```
 
 The [release workflow](.github/workflows/release.yml) checks the versions match, builds and smoke-tests the package,

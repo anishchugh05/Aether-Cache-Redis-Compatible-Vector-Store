@@ -33,8 +33,8 @@ def _java_for_setup():
     except engine.EngineError as missing:
         from . import javart
         reason = str(missing).splitlines()[0]  # "Java isn't installed." or "Found Java 8, which is too old."
-        print(f"[ .... ] {reason} Downloading a private copy of Java {javart.FEATURE_VERSION} for Aether Cache "
-              f"(about 50 MB, only the first time).\n"
+        print(f"[ .... ] {reason} Downloading a private copy of Java {javart.FEATURE_VERSION} (Eclipse Temurin, "
+              f"from adoptium.net, about 50 MB, only the first time).\n"
               f"         It goes in {javart.JAVA_DIR}, only Aether Cache uses it, and nothing else on your "
               f"computer changes.", flush=True)
         try:
@@ -52,7 +52,8 @@ def cmd_setup(args) -> int:
         _say(OK, engine.start())
     except engine.EngineError as e:
         _say(FAIL, str(e))
-        print("\nFix that, then run `aether-cache setup` again.")
+        print("\nFix that, then run `aether-cache setup` again."
+              + ("" if config.CONTACT_URL in str(e) else f"\nStill stuck? Tell us: {config.CONTACT_URL}"))
         return 1
 
     if config.FAKE_EMBEDDER:
@@ -61,14 +62,19 @@ def cmd_setup(args) -> int:
         if any(config.MODELS_DIR.glob("*")):
             print("[ .... ] Loading the embedding model...", flush=True)
         else:
-            print("[ .... ] Downloading the embedding model (about 90 MB, only the first time)...", flush=True)
+            print(f"[ .... ] Downloading the embedding model from Hugging Face (huggingface.co, about 90 MB, only the "
+                  f"first time)\n         into {config.MODELS_DIR}. It's what lets Aether Cache search memories by "
+                  f"meaning...", flush=True)
         try:
-            from .server import embed
-            embed("warm up")
+            from .server import embedder
+            next(iter(embedder().embed(["warm up"])))
             _say(OK, f"Embedding model ready ({config.MODEL})")
         except Exception as e:
-            _say(WARN, f"Couldn't download the embedding model yet: {e}\n"
-                       f"It will be downloaded the first time your AI saves or searches a memory.")
+            detail = (str(e).strip().splitlines() or [type(e).__name__])[0][:160]
+            _say(WARN, f"Couldn't download the embedding model from Hugging Face ({detail}).\n"
+                       f"If your network blocks huggingface.co (common on work or school networks), try another\n"
+                       f"network, then run `aether-cache setup` again. Otherwise it downloads the first time your\n"
+                       f"AI saves or searches a memory. Still stuck? Tell us: {config.CONTACT_URL}")
 
     tools = args.tools or connect.detected()
     if not tools:
@@ -184,7 +190,8 @@ def cmd_doctor(args) -> int:
     top = git_toplevel()
     _say(OK if top else WARN, f"This folder's project: {project_name()}"
          + ("" if top else " (not a git repo, so memories can't be linked to file versions here)"))
-    print("\nEverything looks good." if problems == 0 else f"\n{problems} problem(s) to fix above.")
+    print("\nEverything looks good." if problems == 0 else
+          f"\n{problems} problem(s) to fix above. Still stuck? Tell us: {config.CONTACT_URL}")
     return 1 if problems else 0
 
 

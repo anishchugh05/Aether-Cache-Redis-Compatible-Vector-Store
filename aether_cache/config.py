@@ -20,6 +20,9 @@ PID_FILE = HOME / "engine.pid"
 STAMP_FILE = HOME / "engine.version"  # which engine file the running engine was started from
 MODELS_DIR = HOME / "models"
 
+# Where people can reach us when something goes wrong (the website's contact form).
+CONTACT_URL = "https://anishchugh05.github.io/Aether-Cache-Redis-Compatible-Vector-Store/install.html#contact"
+
 # The engine listens on this machine only. The port is deliberately not Redis's 6379, so Aether Cache
 # never collides with a real Redis you may already run.
 HOST = _env("AETHER_HOST", "MEMORY_HOST", default="127.0.0.1")

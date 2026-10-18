@@ -13,7 +13,7 @@
 set -eu
 
 say() { printf '%s\n' "$*"; }
-fail() { printf '\nError: %s\n' "$*" >&2; exit 1; }
+fail() { printf '\nError: %s\nStill stuck? Tell us: https://anishchugh05.github.io/Aether-Cache-Redis-Compatible-Vector-Store/install.html#contact\n' "$*" >&2; exit 1; }
 
 find_uv() {
   if command -v uv >/dev/null 2>&1; then command -v uv; return; fi
@@ -29,7 +29,7 @@ main() {
   uv=$(find_uv || true)
   if [ -z "$uv" ]; then
     command -v curl >/dev/null 2>&1 || fail "curl is needed to install uv. Install curl, then run this again."
-    say "uv isn't installed, so installing it first (https://docs.astral.sh/uv/)..."
+    say "uv isn't installed, so installing it first (from astral.sh, https://docs.astral.sh/uv/)..."
     curl -LsSf "${AETHER_UV_INSTALLER:-https://astral.sh/uv/install.sh}" | sh
     uv=$(find_uv || true)
     [ -n "$uv" ] || fail "uv was installed but can't be found yet. Open a new terminal and run this again."
@@ -41,7 +41,9 @@ main() {
     say "Aether Cache is already installed. Upgrading it to the latest version..."
     "$uv" tool upgrade aether-cache || fail "Upgrading Aether Cache failed (see above)."
   else
-    "$uv" tool install aether-cache || fail "Installing Aether Cache failed (see above)."
+    # Python 3.12, which uv downloads if needed: the newest Python releases can be ahead of the libraries
+    # Aether Cache uses, and this keeps the install working whatever Python the computer already has.
+    "$uv" tool install --python 3.12 aether-cache || fail "Installing Aether Cache failed (see above)."
   fi
   "$uv" tool update-shell >/dev/null 2>&1 || true  # so `aether-cache` works in new terminals
   say ""

@@ -84,7 +84,8 @@ def _download(client, pkg: dict, dest: Path, progress: Callable[[int, int], None
                 progress(done, total)
     if digest.hexdigest() != pkg["sha256"]:
         raise JavaDownloadError("The Java download didn't match its published checksum, so it wasn't used. "
-                                "Try again; if it keeps happening, install Java yourself from https://adoptium.net.")
+                                "Run `aether-cache setup` to try again; if it keeps happening, install Java 11+ "
+                                f"yourself from https://adoptium.net.\nStill stuck? Tell us: {config.CONTACT_URL}")
 
 
 def _extract(archive: Path, into: Path) -> None:
@@ -163,8 +164,16 @@ def download(progress: Callable[[int, int], None] = _bar, attempts: int = 3) -> 
                 time.sleep(2 * attempt)
         finally:
             shutil.rmtree(work, ignore_errors=True)
-    raise JavaDownloadError(f"Couldn't download Java ({last_error}). Check your internet connection and run "
-                            f"`aether-cache setup` again, or install Java yourself from https://adoptium.net.")
+    raise JavaDownloadError(
+        f"Couldn't download Java from adoptium.net ({_short(last_error)}).\n"
+        f"If your network blocks adoptium.net or github.com (common on work or school networks), try another\n"
+        f"network and run `aether-cache setup` again, or install Java 11+ yourself from https://adoptium.net.\n"
+        f"Still stuck? Tell us: {config.CONTACT_URL}")
+
+
+def _short(error) -> str:
+    text = str(error).strip().splitlines()[0] if str(error).strip() else type(error).__name__
+    return text[:160]
 
 
 def remove() -> bool:
