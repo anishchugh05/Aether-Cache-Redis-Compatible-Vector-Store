@@ -34,6 +34,7 @@ function Install-AetherCache {
     if (-not $uv) {
         Write-Host "uv isn't installed, so installing it first (from astral.sh, https://docs.astral.sh/uv/)..."
         Invoke-RestMethod https://astral.sh/uv/install.ps1 | Invoke-Expression
+        $env:Path = "$HOME\.local\bin;$env:Path"  # this window doesn't see uv's folder until it's reopened
         $uv = Find-Uv
         if (-not $uv) {
             Fail "uv was installed but can't be found yet. Open a new terminal and run this again."
@@ -43,6 +44,7 @@ function Install-AetherCache {
     }
 
     $binDir = (& $uv tool dir --bin).Trim()
+    $env:Path = "$binDir;$env:Path"  # so uv doesn't warn that the folder isn't on PATH yet; update-shell fixes it for good
     $exe = Join-Path $binDir "aether-cache.exe"
     if (Test-Path $exe) {
         Write-Host "Aether Cache is already installed. Upgrading it to the latest version..."

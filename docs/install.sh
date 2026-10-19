@@ -37,6 +37,7 @@ main() {
   fi
 
   bin_dir=$("$uv" tool dir --bin)
+  PATH="$bin_dir:$PATH"; export PATH  # so uv doesn't warn that the folder isn't on PATH yet; update-shell fixes it for good
   if [ -x "$bin_dir/aether-cache" ]; then
     say "Aether Cache is already installed. Upgrading it to the latest version..."
     "$uv" tool upgrade aether-cache || fail "Upgrading Aether Cache failed (see above)."

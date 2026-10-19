@@ -98,12 +98,18 @@ def add(path: str) -> dict:
         raise RepoError(f"A different repo with the same folder name, {name}, is already added ({existing}). "
                         f"Projects are named after their folder, so rename one of the folders to keep both.")
     server.db().set(server.REPO_KEY + name, str(top))
+    server.db().set(HIDDEN_KEY + name, "")  # adding a removed project back shows it again
     return {"name": name, "path": str(top), "github": github_remote(top)}
 
 
+HIDDEN_KEY = "aether:removed:"  # aether:removed:<project> -> when it was removed from the dashboard (ms)
+
+
 def remove(name: str) -> None:
-    """Forgets where a repo lives. Its memories are kept; it just stops being listed if it has none."""
-    server.db().set(server.REPO_KEY + name, "")  # the engine has no DEL; an empty location means "not added"
+    """Forgets where a repo lives and hides the project from the dashboard. Memories are never deleted."""
+    import time
+    server.db().set(server.REPO_KEY + name, "")  # the engine has no DEL; an empty value means "not set"
+    server.db().set(HIDDEN_KEY + name, str(int(time.time() * 1000)))
 
 
 def pick_folder() -> Optional[str]:

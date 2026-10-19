@@ -90,19 +90,39 @@ def is_private(java: str) -> bool:
 
 # ---------- talking to the engine ----------
 
-def client(timeout: Optional[float] = None) -> redis.Redis:
+def client(timeout: Optional[float] = None, retries: Optional[int] = None) -> redis.Redis:
     # protocol=2 and no lib_name/lib_version: the engine speaks RESP2 and doesn't implement
     # HELLO or CLIENT SETINFO, which newer redis-py clients send by default
+    extra = {}
+    if retries is not None:
+        from redis.backoff import NoBackoff
+        from redis.retry import Retry
+        extra["retry"] = Retry(NoBackoff(), retries)
     with warnings.catch_warnings():  # newer redis-py warns that lib_name is deprecated; harmless here
         warnings.simplefilter("ignore")
         return redis.Redis(host=config.HOST, port=config.PORT, protocol=2, decode_responses=True,
                            lib_name=None, lib_version=None,
-                           socket_connect_timeout=timeout, socket_timeout=timeout)
+                           socket_connect_timeout=timeout, socket_timeout=timeout, **extra)
+
+
+def _port_open(timeout: float = 0.5) -> bool:
+    """Quick check that something is listening. On Windows, connecting to a closed local port isn't refused
+    straight away: it waits about 2 seconds, so a short timeout here keeps "is the engine running?" fast."""
+    import socket
+    try:
+        with socket.create_connection((config.HOST, config.PORT), timeout=timeout):
+            return True
+    except OSError:
+        return False
 
 
 def probe() -> Optional[str]:
     """"aether" if our engine answers on the port, "other" if some other program does, None if nothing does."""
-    c = client(timeout=2)
+    if not _port_open():
+        return None
+    # no retries: newer redis-py retries failed connections several times, which on Windows
+    # made each check take 10+ seconds when the engine wasn't running
+    c = client(timeout=2, retries=0)
     try:
         c.ping()
     except (redis.ConnectionError, redis.TimeoutError, OSError):

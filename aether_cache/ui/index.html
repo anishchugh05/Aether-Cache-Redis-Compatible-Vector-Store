@@ -167,6 +167,10 @@ code.inline { font-family: var(--mono); font-size: 0.86em; background: var(--sur
   .project:hover { background: var(--rail-active); }
   .row:hover { background: var(--surface-2); }
 }
+.btn.danger { background: var(--stale); border-color: var(--stale); color: var(--ground); }
+.remove-confirm { margin-top: var(--s3); padding: var(--s3); border: 1px solid var(--stale); border-radius: var(--radius); background: var(--surface); max-width: 62ch; }
+.remove-confirm p { margin: 0 0 var(--s3); font-size: var(--t-sm); }
+.remove-confirm .actions { display: flex; gap: var(--s2); }
 .retire-form { display: flex; gap: var(--s2); flex-wrap: wrap; width: 100%; margin-top: var(--s2); }
 .retire-form input, .search input {
   border: 1px solid var(--rule); border-radius: 6px; background: var(--surface); height: 34px; padding: 0 12px; font-size: var(--t-sm);
@@ -647,15 +651,35 @@ async function chooseFolder(button) {
   }
 }
 
-async function removeProject(name) {
+function confirmRemove(p, trigger) {
+  const live = p.counts.active + p.counts.stale;
+  const box = document.getElementById("remove-confirm");
+  if (box) { box.remove(); trigger.setAttribute("aria-expanded", "false"); return; }
+  const go = h("button", { class: "btn danger", type: "button", onclick: () => removeProject(p.name, go) }, "Remove project");
+  const cancel = h("button", { class: "btn", type: "button",
+    onclick: () => { panel.remove(); trigger.setAttribute("aria-expanded", "false"); trigger.focus(); } }, "Cancel");
+  const panel = h("div", { class: "remove-confirm", id: "remove-confirm", role: "group", "aria-label": `Remove ${p.name}` },
+    h("p", {}, live
+      ? `Remove ${p.name}? Its ${plural(live, "memory", "memories")} will be retired, so your AI tools stop using them. ` +
+        "Nothing is deleted: export first if you want a copy."
+      : `Remove ${p.name} from the dashboard? Nothing is deleted.`),
+    h("div", { class: "actions" }, go, cancel));
+  panel.addEventListener("keydown", (e) => { if (e.key === "Escape") { e.stopPropagation(); cancel.click(); } });
+  trigger.setAttribute("aria-expanded", "true");
+  document.getElementById("head").append(panel);
+  go.focus();
+}
+
+async function removeProject(name, button) {
+  if (button) button.disabled = true;
   try {
-    await api("/api/projects/remove", { name });
-    notify(`Removed ${name} from the dashboard.`);
+    const r = await api("/api/projects/remove", { name });
+    notify(`Removed ${name}` + (r.retired ? ` and retired ${plural(r.retired, "memory", "memories")}.` : "."));
     if (state.discovered) state.discovered.forEach((r) => { if (r.name === name) r.added = false; });
     state.project = null;
     await loadProjects();
     if (state.projects.length) await selectProject(state.projects[0].name); else openAdd(true);
-  } catch (e) { notify(e.message); }
+  } catch (e) { notify(e.message); if (button) button.disabled = false; }
 }
 
 function renderAdd() {
@@ -805,8 +829,9 @@ const totalOf = (p) => p.counts.active + p.counts.stale + p.counts.retired + p.c
 function renderHead() {
   const p = state.projects.find((x) => x.name === state.project);
   if (!p) { put(document.getElementById("head")); return; }
-  const remove = p.repo && totalOf(p) === 0
-    ? h("button", { class: "linkish", type: "button", onclick: () => removeProject(p.name) }, "Remove from dashboard") : null;
+  const remove = h("button", { class: "linkish", type: "button", "aria-expanded": "false", "aria-controls": "remove-confirm" },
+    "Remove project…");
+  remove.onclick = () => confirmRemove(p, remove);
   const exp = h("button", { class: "btn with-icon", type: "button", onclick: () => exportMemories(p.name, exp) }, icon("export", 14), "Export");
   put(document.getElementById("head"), h("div", { class: "head-row" },
     h("div", {}, h("h1", {}, p.name),

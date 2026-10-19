@@ -112,16 +112,40 @@ def memory_summary(m: dict) -> dict:
 
 # ---------- API ----------
 
+REMOVED_REASON = "project removed from the dashboard"
+
+
+def removed_projects() -> dict:
+    """project -> when it was removed from the dashboard (ms)."""
+    keys = [k for k in server.db().keys("*") if k.startswith(repo_tools.HIDDEN_KEY)]
+    pipe = server.db().pipeline(transaction=False)
+    for k in keys:
+        pipe.get(k)
+    values = pipe.execute() if keys else []
+    return {k[len(repo_tools.HIDDEN_KEY):]: int(v) for k, v in zip(keys, values) if v and v.isdigit()}
+
+
 def api_projects(_q, _body) -> dict:
     repos = repo_locations()
+    removed = removed_projects()
+    memories = all_memories()
+    # A removed project stays hidden until something new happens in it: a memory saved after the removal
+    # (an AI tool used it again), or adding it back from the dashboard (which clears the mark).
+    for m in memories:
+        if m["project"] in removed and int(m["created_at"]) > removed[m["project"]]:
+            del removed[m["project"]]
     projects = {}
-    for m in all_memories():
+    for m in memories:
+        if m["project"] in removed:
+            continue
         p = projects.setdefault(m["project"], {"name": m["project"], "counts": dict.fromkeys(STATUSES + ("retired",), 0)})
         status = m["status"]
         if status == "stale" and not last_reason(m["id"]).endswith(FILE_CHANGE):
             status = "retired"
         p["counts"][status] += 1
     for name, repo in repos.items():  # added repos show up even before they have any memories
+        if name in removed:
+            continue
         projects.setdefault(name, {"name": name, "counts": dict.fromkeys(STATUSES + ("retired",), 0)})
     for name, p in projects.items():
         repo = repos.get(name)
@@ -148,8 +172,22 @@ def api_add(_q, body) -> dict:
 
 
 def api_remove(_q, body) -> dict:
-    repo_tools.remove(_need(body, "name"))
-    return {"ok": True}
+    """Removes a project from the dashboard: retires its memories (so AI tools stop using them; their history
+    is kept) and hides it from the list."""
+    name = _need(body, "name")
+    to_retire = []
+    for m in all_memories():
+        if m["project"] != name:
+            continue
+        if m["status"] == "active" or (m["status"] == "stale" and last_reason(m["id"]).endswith(FILE_CHANGE)):
+            to_retire.append(m["id"])
+    if to_retire:
+        pipe = server.db().pipeline(transaction=False)
+        for memory_id in to_retire:
+            pipe.execute_command("MEM.STATUS", memory_id, "stale", "REASON", REMOVED_REASON)
+        pipe.execute()
+    repo_tools.remove(name)
+    return {"ok": True, "retired": len(to_retire)}
 
 
 def api_pick(_q, _body) -> dict:
@@ -417,6 +455,8 @@ def make_handler(token: str, port: int):
 
 def serve(port: Optional[int] = None, open_browser: bool = True) -> int:
     try:
+        if engine.probe() != "aether":
+            print("Starting the engine...", flush=True)
         engine.ensure_running()
     except engine.EngineError as e:
         print(e)
