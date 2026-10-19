@@ -10,18 +10,18 @@
     <meta content="width=device-width,initial-scale=1" name="viewport" />
     <meta content="light dark" name="color-scheme" />
     <meta
-      content="The idea behind Aether Cache: project memory that can explain when a fact is still useful, when it changed, and why it was replaced."
+      content="The idea behind Mnemolith: project memory that can explain when a fact is still useful, when it changed, and why it was replaced."
       name="description"
     />
-    <title>The idea — Aether Cache</title>
+    <title>The idea — Mnemolith</title>
     <script>
       try {
-        const t = localStorage.getItem("aether-theme");
+        const t = localStorage.getItem("mnemolith-theme");
         if (t === "light" || t === "dark")
           document.documentElement.dataset.theme = t;
       } catch (e) {}
     </script>
-    <link href="assets/site.css?v=7" rel="stylesheet" />
+    <link href="assets/site.css?v=8" rel="stylesheet" />
     <link
       as="font"
       crossorigin=""
@@ -29,39 +29,39 @@
       rel="preload"
       type="font/woff2"
     />
-    <meta property="og:title" content="The idea — Aether Cache" />
+    <meta property="og:title" content="The idea — Mnemolith" />
     <meta
       property="og:description"
-      content="The idea behind Aether Cache: project memory that can explain when a fact is still useful, when it changed, and why it was replaced."
+      content="The idea behind Mnemolith: project memory that can explain when a fact is still useful, when it changed, and why it was replaced."
     />
     <meta property="og:type" content="website" />
     <meta
       property="og:url"
-      content="https://anishchugh05.github.io/Aether-Cache-Redis-Compatible-Vector-Store/about.html"
+      content="https://mnemolith.dev/about.html"
     />
     <meta
       property="og:image"
-      content="https://anishchugh05.github.io/Aether-Cache-Redis-Compatible-Vector-Store/assets/og-image.png"
+      content="https://mnemolith.dev/assets/og-image.png"
     />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta
       property="og:image:alt"
-      content="Aether Cache. Memory that stays true to your code. A dashboard card shows a stale memory and the file versions behind it."
+      content="Mnemolith. Memory that stays true to your code. A dashboard card shows a stale memory and the file versions behind it."
     />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="The idea — Aether Cache" />
+    <meta name="twitter:title" content="The idea — Mnemolith" />
     <meta
       name="twitter:description"
-      content="The idea behind Aether Cache: project memory that can explain when a fact is still useful, when it changed, and why it was replaced."
+      content="The idea behind Mnemolith: project memory that can explain when a fact is still useful, when it changed, and why it was replaced."
     />
     <meta
       name="twitter:image"
-      content="https://anishchugh05.github.io/Aether-Cache-Redis-Compatible-Vector-Store/assets/og-image.png"
+      content="https://mnemolith.dev/assets/og-image.png"
     />
     <meta
       name="twitter:image:alt"
-      content="Aether Cache. Memory that stays true to your code. A stale-memory review card."
+      content="Mnemolith. Memory that stays true to your code. A stale-memory review card."
     />
     <!-- Privacy-friendly visit counts (no cookies): https://aethercache.goatcounter.com -->
     <script async data-goatcounter="https://aethercache.goatcounter.com/count" src="https://gc.zgo.at/count.js"></script>
@@ -70,7 +70,7 @@
     <a class="skip" href="#main">Skip to content</a>
     <div class="wrap">
       <header class="masthead">
-        <a aria-label="Aether Cache home" class="brand" href="index.html"
+        <a aria-label="Mnemolith home" class="brand" href="index.html"
           ><svg
             aria-hidden="true"
             class="brand-mark"
@@ -87,7 +87,7 @@
               stroke="currentColor"
               stroke-width="2"
             ></path></svg
-          >Aether Cache</a
+          >Mnemolith</a
         >
         <nav aria-label="Main navigation">
           <a href="index.html">Home</a
@@ -137,12 +137,32 @@
             moves on and the saved context doesn’t.
           </p>
           <p>
-            Aether Cache connects a fact to the files behind it. When those
+            Mnemolith connects a fact to the files behind it. When those
             files change, the fact can leave active memory without disappearing
             from history. You can see what was believed, what changed, and why.
           </p>
           <p class="story-principle">
             The goal is context you can inspect, question, and keep current.
+          </p>
+        </div>
+      </section>
+      <section aria-labelledby="name-title" class="about-story wrap" id="name">
+        <h2 id="name-title">Why “Mnemolith”?</h2>
+        <div>
+          <p>
+            From the Greek <em>mnēmē</em>, memory, and <em>lithos</em>, stone.
+            Say it “NEE-mo-lith.” For most of history, the things people most
+            needed to remember were carved in stone: laws, treaties, the Rosetta
+            Stone. It was the one place knowledge didn’t fade.
+          </p>
+          <p>
+            AI tools forget everything between chats. Mnemolith is the stone
+            they write on: what your project knows, kept where every tool can
+            read it.
+          </p>
+          <p class="story-principle">
+            And unlike real stone, it knows when something carved there is no
+            longer true.
           </p>
         </div>
       </section>
@@ -208,9 +228,9 @@
       <section aria-labelledby="status-title" class="section status-section">
         <div class="wrap status-grid">
           <div>
-            <h2 id="status-title">A working v0.1.9. Still early.</h2>
+            <h2 id="status-title">A working v0.2.0. Still early.</h2>
             <p>
-              This is v0.1.9. The engine and memory workflow are here. There’s
+              This is v0.2.0. The engine and memory workflow are here. There’s
               more to measure, and more to build.
             </p>
           </div>
@@ -220,7 +240,7 @@
               <p>
                 Local shared memory, file-linked retirement, provenance, file
                 sync, MCP connections, a browser dashboard for reviewing
-                memories (<code>aether-cache ui</code>), importing the notes
+                memories (<code>mnemolith ui</code>), importing the notes
                 you already keep in CLAUDE.md, AGENTS.md, and Cursor rules,
                 JSON export, a clean uninstall, and a private copy of Java downloaded
                 for you when your computer doesn’t have one.
@@ -249,7 +269,7 @@
           </div>
           <a
             class="button"
-            href="https://github.com/anishchugh05/Aether-Cache-Redis-Compatible-Vector-Store"
+            href="https://github.com/anishchugh05/mnemolith"
             >Explore on GitHub<svg
               aria-hidden="true"
               class="link-arrow"
@@ -274,15 +294,15 @@
         <span>© 2026 Anish Chugh</span>
         <div class="footer-links">
           <a href="install.html#faq">FAQ</a
-          ><a href="https://github.com/anishchugh05/Aether-Cache-Redis-Compatible-Vector-Store/blob/main/LICENSE"
+          ><a href="https://github.com/anishchugh05/mnemolith/blob/main/LICENSE"
             >License</a
           ><a href="install.html#contact">Contact</a
           ><a
-            href="https://github.com/anishchugh05/Aether-Cache-Redis-Compatible-Vector-Store"
+            href="https://github.com/anishchugh05/mnemolith"
             >GitHub</a
-          ><a href="https://pypi.org/project/aether-cache/">PyPI</a
-          ><a href="https://glama.ai/mcp/servers/anishchugh05/Aether-Cache-Redis-Compatible-Vector-Store">Glama</a
-          ><span>Aether Cache v0.1.9</span>
+          ><a href="https://pypi.org/project/mnemolith/">PyPI</a
+          ><a href="https://glama.ai/mcp/servers/anishchugh05/mnemolith">Glama</a
+          ><span>Mnemolith v0.2.0</span>
         </div>
       </footer>
     </div>
@@ -292,6 +312,6 @@
       id="copy-status"
       role="status"
     ></div>
-    <script defer="" src="assets/site.js?v=7"></script>
+    <script defer="" src="assets/site.js?v=8"></script>
   </body>
 </html>

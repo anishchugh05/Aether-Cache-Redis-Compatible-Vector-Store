@@ -1,7 +1,7 @@
 """
-Finding and adding the git repos whose memories Aether Cache manages.
+Finding and adding the git repos whose memories Mnemolith manages.
 
-Adding a repo just records where it lives (aether:repo:<project> -> folder), which lets the dashboard check
+Adding a repo just records where it lives (mnemolith:repo:<project> -> folder), which lets the dashboard check
 its memories' files from anywhere. Nothing is read from the repo beyond git metadata; nothing leaves the machine.
 """
 import os
@@ -102,7 +102,7 @@ def add(path: str) -> dict:
     return {"name": name, "path": str(top), "github": github_remote(top)}
 
 
-HIDDEN_KEY = "aether:removed:"  # aether:removed:<project> -> when it was removed from the dashboard (ms)
+HIDDEN_KEY = "mnemolith:removed:"  # mnemolith:removed:<project> -> when it was removed from the dashboard (ms)
 
 
 def remove(name: str) -> None:
@@ -119,15 +119,15 @@ def pick_folder() -> Optional[str]:
     if system == "Darwin":
         # "tell me to activate" brings the picker to the front without asking to control another app
         script = ('tell me to activate\n'
-                  'POSIX path of (choose folder with prompt "Choose a project folder to add to Aether Cache")')
+                  'POSIX path of (choose folder with prompt "Choose a project folder to add to Mnemolith")')
         cmd = ["osascript", "-e", script]
     elif system == "Windows":
         ps = ("Add-Type -AssemblyName System.Windows.Forms; $d = New-Object System.Windows.Forms.FolderBrowserDialog; "
-              "$d.Description = 'Choose a git repo to add to Aether Cache'; "
+              "$d.Description = 'Choose a git repo to add to Mnemolith'; "
               "if ($d.ShowDialog() -eq 'OK') { $d.SelectedPath }")
         cmd = ["powershell", "-NoProfile", "-Command", ps]
     else:
-        cmd = ["zenity", "--file-selection", "--directory", "--title=Choose a git repo to add to Aether Cache"]
+        cmd = ["zenity", "--file-selection", "--directory", "--title=Choose a git repo to add to Mnemolith"]
     try:
         out = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
     except FileNotFoundError:

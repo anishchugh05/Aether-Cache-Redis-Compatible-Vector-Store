@@ -1,0 +1,25 @@
+# The last release of `aether-cache`, Mnemolith's earlier name. It tells people about the move and keeps
+# AI tools that still launch `aether_cache` working (by running Mnemolith) until they reinstall.
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "aether-cache"
+version = "0.2.0"
+description = "Aether Cache is now Mnemolith. Install mnemolith instead."
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{ name = "Anish Chugh" }]
+license = "MIT"
+dependencies = ["mnemolith>=0.2.0"]
+
+[project.urls]
+Homepage = "https://mnemolith.dev/"
+Repository = "https://github.com/anishchugh05/mnemolith"
+
+[project.scripts]
+aether-cache = "aether_cache:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["aether_cache"]

@@ -1,5 +1,5 @@
 """
-`aether-cache ui`: a local dashboard for seeing and fixing what your AI tools remember.
+`mnemolith ui`: a local dashboard for seeing and fixing what your AI tools remember.
 
 A small HTTP server on this machine serves one page (ui/index.html) and a JSON API it calls.
 Only this machine can reach it, and every API request must carry a secret token that's created fresh
@@ -23,7 +23,7 @@ from . import repos as repo_tools
 
 PAGE = Path(__file__).resolve().parent / "ui" / "index.html"
 FONTS = {f.name: f for f in (PAGE.parent / "fonts").glob("*.woff2")}  # only these files are ever served
-DEFAULT_PORT = int(os.environ.get("AETHER_UI_PORT", "7381"))
+DEFAULT_PORT = int(os.environ.get("MNEMOLITH_UI_PORT", "7381"))
 STATUSES = ("active", "stale", "superseded")
 
 
@@ -67,7 +67,7 @@ def all_memories() -> list:
 
 
 def repo_locations() -> dict:
-    """project -> repo folder, as recorded by the MCP server when an AI used Aether Cache there."""
+    """project -> repo folder, as recorded by the MCP server when an AI used Mnemolith there."""
     keys = [k for k in server.db().keys("*") if k.startswith(server.REPO_KEY)]
     pipe = server.db().pipeline(transaction=False)  # one round trip; the engine has no MGET
     for k in keys:
@@ -383,7 +383,7 @@ def make_handler(token: str, port: int):
     allowed_hosts = {f"127.0.0.1:{port}", f"localhost:{port}"}
 
     class Handler(BaseHTTPRequestHandler):
-        server_version = "aether-cache"
+        server_version = "mnemolith"
 
         def log_message(self, *args):  # keep the terminal quiet
             pass
@@ -418,8 +418,8 @@ def make_handler(token: str, port: int):
             route = ROUTES.get((method, url.path))
             if route is None:
                 return self._json(404, {"error": "Not found."})
-            if not secrets.compare_digest(self.headers.get("X-Aether-Token", ""), token):
-                return self._json(401, {"error": "Missing or wrong token. Reopen the dashboard with `aether-cache ui`."})
+            if not secrets.compare_digest(self.headers.get("X-Mnemolith-Token", ""), token):
+                return self._json(401, {"error": "Missing or wrong token. Reopen the dashboard with `mnemolith ui`."})
             body = {}
             if method == "POST":
                 # requiring JSON means a cross-site form can't post here without the browser asking first
@@ -440,7 +440,7 @@ def make_handler(token: str, port: int):
             except server.EngineDown as e:
                 self._json(503, {"error": str(e)})
             except (redis.ConnectionError, redis.TimeoutError):
-                self._json(503, {"error": "The engine stopped responding. Run `aether-cache start`."})
+                self._json(503, {"error": "The engine stopped responding. Run `mnemolith start`."})
             except Exception as e:  # never crash the server over one request
                 self._json(500, {"error": f"Something went wrong: {e}"})
 
@@ -455,7 +455,7 @@ def make_handler(token: str, port: int):
 
 def serve(port: Optional[int] = None, open_browser: bool = True) -> int:
     try:
-        if engine.probe() != "aether":
+        if engine.probe() != "ours":
             print("Starting the engine...", flush=True)
         engine.ensure_running()
     except engine.EngineError as e:
@@ -476,7 +476,7 @@ def serve(port: Optional[int] = None, open_browser: bool = True) -> int:
         return 1
     httpd.daemon_threads = True
     url = f"http://127.0.0.1:{port}/#token={token}"  # after #, so it's never sent in a request or logged
-    print(f"Aether Cache dashboard: {url}\nPress Ctrl+C to stop.")
+    print(f"Mnemolith dashboard: {url}\nPress Ctrl+C to stop.")
     if open_browser:
         threading.Timer(0.3, lambda: webbrowser.open(url)).start()
     if not config.FAKE_EMBEDDER:

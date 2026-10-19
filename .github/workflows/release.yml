@@ -1,9 +1,10 @@
 # Releases a new version when a version tag is pushed:
 #
-#   git tag v0.1.7 && git push --tags
+#   git tag v0.2.0 && git push --tags
 #
-# 1. Checks the tag matches the version in pyproject.toml, aether_cache/__init__.py and server.json.
-# 2. Builds the package and smoke-tests it (installs it and checks `aether-cache --version`).
+# 1. Checks the tag matches the version in pyproject.toml, mnemolith/__init__.py and server.json.
+# 2. Builds the package and smoke-tests it (installs it and checks `mnemolith --version`), plus the final
+#    `aether-cache` release that points people to Mnemolith (the project's earlier name).
 # 3. Publishes to PyPI with trusted publishing (no token: PyPI trusts this workflow).
 # 4. Publishes to the official MCP Registry (GitHub OIDC login, no token).
 # 5. Creates the GitHub Release with the built files attached.
@@ -26,7 +27,7 @@ jobs:
         run: |
           TAG="${GITHUB_REF_NAME#v}"
           PYPROJECT=$(sed -n 's/^version = "\(.*\)"/\1/p' pyproject.toml)
-          INIT=$(sed -n 's/^__version__ = "\(.*\)"/\1/p' aether_cache/__init__.py)
+          INIT=$(sed -n 's/^__version__ = "\(.*\)"/\1/p' mnemolith/__init__.py)
           SERVER=$(jq -r '.version' server.json)
           PACKAGE=$(jq -r '.packages[0].version' server.json)
           echo "tag=$TAG pyproject=$PYPROJECT __init__=$INIT server.json=$SERVER/$PACKAGE"
@@ -40,15 +41,21 @@ jobs:
       - uses: astral-sh/setup-uv@v7
 
       - name: Build
-        run: uv build
+        run: |
+          uv build
+          # the last `aether-cache` release (the project's earlier name), pointing people to Mnemolith.
+          # Its version never changes, so PyPI keeps the first upload and later releases skip it.
+          uv build legacy/aether-cache --out-dir dist
 
       - name: Smoke test the built package
         run: |
           uv venv /tmp/check
-          uv pip install --python /tmp/check/bin/python dist/*.whl
-          /tmp/check/bin/aether-cache --version | tee /tmp/version.txt
-          grep -q "aether-cache ${GITHUB_REF_NAME#v}$" /tmp/version.txt
-          unzip -l dist/*.whl | grep -q "aether_cache/engine/aether-engine.jar"
+          uv pip install --python /tmp/check/bin/python dist/mnemolith-*.whl
+          /tmp/check/bin/mnemolith --version | tee /tmp/version.txt
+          grep -q "mnemolith ${GITHUB_REF_NAME#v}$" /tmp/version.txt
+          unzip -l dist/mnemolith-*.whl | grep -q "mnemolith/engine/mnemolith-engine.jar"
+          uv pip install --python /tmp/check/bin/python dist/aether_cache-*.whl
+          /tmp/check/bin/aether-cache | grep -q "Aether Cache is now Mnemolith"
 
       - uses: actions/upload-artifact@v7
         with:
@@ -67,6 +74,8 @@ jobs:
           name: dist
           path: dist/
       - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          skip-existing: true # the final aether-cache release is only uploaded once
 
   mcp-registry:
     needs: pypi
@@ -81,7 +90,7 @@ jobs:
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
           for i in $(seq 1 30); do
-            if curl -fsS "https://pypi.org/pypi/aether-cache/$VERSION/json" | grep -q "mcp-name: io.github.anishchugh05/aether-cache"; then
+            if curl -fsS "https://pypi.org/pypi/mnemolith/$VERSION/json" | grep -q "mcp-name: io.github.anishchugh05/mnemolith"; then
               echo "PyPI has $VERSION"; exit 0
             fi
             sleep 10
@@ -111,5 +120,5 @@ jobs:
           path: dist/
       - uses: softprops/action-gh-release@v3
         with:
-          files: dist/*
+          files: dist/mnemolith-*
           generate_release_notes: true

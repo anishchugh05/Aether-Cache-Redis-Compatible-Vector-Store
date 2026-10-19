@@ -13,15 +13,15 @@
       content="Shared memory for Claude Code, Cursor, and Codex. Local, open source, and checked against your code."
       name="description"
     />
-    <title>Aether Cache — Memory that stays true to your code</title>
+    <title>Mnemolith — Memory that stays true to your code</title>
     <script>
       try {
-        const t = localStorage.getItem("aether-theme");
+        const t = localStorage.getItem("mnemolith-theme");
         if (t === "light" || t === "dark")
           document.documentElement.dataset.theme = t;
       } catch (e) {}
     </script>
-    <link href="assets/site.css?v=7" rel="stylesheet" />
+    <link href="assets/site.css?v=8" rel="stylesheet" />
     <link
       as="font"
       crossorigin=""
@@ -31,7 +31,7 @@
     />
     <meta
       property="og:title"
-      content="Aether Cache — Memory that stays true to your code"
+      content="Mnemolith — Memory that stays true to your code"
     />
     <meta
       property="og:description"
@@ -40,22 +40,22 @@
     <meta property="og:type" content="website" />
     <meta
       property="og:url"
-      content="https://anishchugh05.github.io/Aether-Cache-Redis-Compatible-Vector-Store/"
+      content="https://mnemolith.dev/"
     />
     <meta
       property="og:image"
-      content="https://anishchugh05.github.io/Aether-Cache-Redis-Compatible-Vector-Store/assets/og-image.png"
+      content="https://mnemolith.dev/assets/og-image.png"
     />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta
       property="og:image:alt"
-      content="Aether Cache. Memory that stays true to your code. A dashboard card shows a stale memory and the file versions behind it."
+      content="Mnemolith. Memory that stays true to your code. A dashboard card shows a stale memory and the file versions behind it."
     />
     <meta name="twitter:card" content="summary_large_image" />
     <meta
       name="twitter:title"
-      content="Aether Cache — Memory that stays true to your code"
+      content="Mnemolith — Memory that stays true to your code"
     />
     <meta
       name="twitter:description"
@@ -63,11 +63,11 @@
     />
     <meta
       name="twitter:image"
-      content="https://anishchugh05.github.io/Aether-Cache-Redis-Compatible-Vector-Store/assets/og-image.png"
+      content="https://mnemolith.dev/assets/og-image.png"
     />
     <meta
       name="twitter:image:alt"
-      content="Aether Cache. Memory that stays true to your code. A stale-memory review card."
+      content="Mnemolith. Memory that stays true to your code. A stale-memory review card."
     />
     <!-- Privacy-friendly visit counts (no cookies): https://aethercache.goatcounter.com -->
     <script async data-goatcounter="https://aethercache.goatcounter.com/count" src="https://gc.zgo.at/count.js"></script>
@@ -76,7 +76,7 @@
     <a class="skip" href="#main">Skip to content</a>
     <div class="wrap">
       <header class="masthead">
-        <a aria-label="Aether Cache home" class="brand" href="index.html"
+        <a aria-label="Mnemolith home" class="brand" href="index.html"
           ><svg
             aria-hidden="true"
             class="brand-mark"
@@ -93,7 +93,7 @@
               stroke="currentColor"
               stroke-width="2"
             ></path></svg
-          >Aether Cache</a
+          >Mnemolith</a
         >
         <nav aria-label="Main navigation">
           <a aria-current="page" href="index.html">Home</a
@@ -149,13 +149,13 @@
                   ></path></svg></a
               ><a
                 class="text-link"
-                href="https://github.com/anishchugh05/Aether-Cache-Redis-Compatible-Vector-Store"
+                href="https://github.com/anishchugh05/mnemolith"
                 >View on GitHub</a
               >
             </div>
           </div>
           <div class="hero-foot">
-            <span>Open source, v0.1.9. Runs entirely on your machine.</span>
+            <span>Open source, v0.2.0. Runs entirely on your machine.</span>
           </div>
         </div>
         <div class="hero-demo">
@@ -245,7 +245,7 @@
         <div class="section-lead">
           <h2 id="dashboard-title">See and fix what your AI remembers.</h2>
           <p>
-            Run <code>aether-cache ui</code> to open your projects in the
+            Run <code>mnemolith ui</code> to open your projects in the
             browser. Memories whose files changed are waiting for a decision,
             with the exact file versions side by side. Confirm the ones that are
             still true, retire the rest, and settle facts that contradict each
@@ -254,7 +254,7 @@
         </div>
         <figure class="dashboard-window">
           <figcaption class="dashboard-window-bar">
-            <span>Aether Cache dashboard</span><span>On your machine</span>
+            <span>Mnemolith dashboard</span><span>On your machine</span>
           </figcaption>
           <picture data-theme-picture>
             <source
@@ -284,16 +284,16 @@
               height="900"
               loading="lazy"
               decoding="async"
-              alt="Aether Cache dashboard showing two memories flagged as stale because docker-compose.yml and ci.yml changed, with saved and current file versions, plus one possible contradiction to resolve."
+              alt="Mnemolith dashboard showing two memories flagged as stale because docker-compose.yml and ci.yml changed, with saved and current file versions, plus one possible contradiction to resolve."
             />
           </picture>
         </figure>
         <div class="code-block dashboard-command">
-          <pre>aether-cache ui</pre>
+          <pre>mnemolith ui</pre>
           <button
             type="button"
             class="copy-button"
-            data-copy="aether-cache ui"
+            data-copy="mnemolith ui"
             aria-label="Copy dashboard command"
           >
             Copy
@@ -386,15 +386,15 @@
         <span>© 2026 Anish Chugh</span>
         <div class="footer-links">
           <a href="install.html#faq">FAQ</a
-          ><a href="https://github.com/anishchugh05/Aether-Cache-Redis-Compatible-Vector-Store/blob/main/LICENSE"
+          ><a href="https://github.com/anishchugh05/mnemolith/blob/main/LICENSE"
             >License</a
           ><a href="install.html#contact">Contact</a
           ><a
-            href="https://github.com/anishchugh05/Aether-Cache-Redis-Compatible-Vector-Store"
+            href="https://github.com/anishchugh05/mnemolith"
             >GitHub</a
-          ><a href="https://pypi.org/project/aether-cache/">PyPI</a
-          ><a href="https://glama.ai/mcp/servers/anishchugh05/Aether-Cache-Redis-Compatible-Vector-Store">Glama</a
-          ><span>Aether Cache v0.1.9</span>
+          ><a href="https://pypi.org/project/mnemolith/">PyPI</a
+          ><a href="https://glama.ai/mcp/servers/anishchugh05/mnemolith">Glama</a
+          ><span>Mnemolith v0.2.0</span>
         </div>
       </footer>
     </div>
@@ -404,6 +404,6 @@
       id="copy-status"
       role="status"
     ></div>
-    <script defer="" src="assets/site.js?v=7"></script>
+    <script defer="" src="assets/site.js?v=8"></script>
   </body>
 </html>

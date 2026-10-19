@@ -1,6 +1,6 @@
-# Aether Cache website
+# Mnemolith website
 
-A four-page static website for Aether Cache v0.1.2. No build step or dependencies to install.
+A four-page static website for Mnemolith v0.1.2. No build step or dependencies to install.
 
 ## Preview
 
@@ -38,4 +38,4 @@ All internal links are relative, so both a custom domain and a repository subdir
 
 ## Edit
 
-Edit page content in the corresponding HTML file. Shared styles, interactions, and font live in assets/. design-spec.md explains the visual and interaction decisions. Review JPGs are excluded. Share metadata uses https://anishchugh05.github.io/Aether-Cache-Redis-Compatible-Vector-Store/; update the absolute metadata URLs on all four pages if the publishing address changes.
+Edit page content in the corresponding HTML file. Shared styles, interactions, and font live in assets/. design-spec.md explains the visual and interaction decisions. Review JPGs are excluded. Share metadata uses https://mnemolith.dev/; update the absolute metadata URLs on all four pages if the publishing address changes.

@@ -2,9 +2,9 @@
 A private copy of Java, for people who don't have it.
 
 The engine needs Java 11 or newer. If this computer has one, it's used and nothing is downloaded. If not,
-`aether-cache setup` downloads Eclipse Temurin (the standard free build of Java) into ~/.aether-cache/java,
-checks the download against the checksum its publisher lists, and uses it only for Aether Cache: nothing is
-installed system-wide, and `aether-cache uninstall` removes it.
+`mnemolith setup` downloads Eclipse Temurin (the standard free build of Java) into ~/.mnemolith/java,
+checks the download against the checksum its publisher lists, and uses it only for Mnemolith: nothing is
+installed system-wide, and `mnemolith uninstall` removes it.
 """
 import hashlib
 import os
@@ -21,7 +21,7 @@ from typing import Callable, Optional
 from . import config
 
 FEATURE_VERSION = 21  # a long-term-support release
-API = os.environ.get("AETHER_JAVA_API", "https://api.adoptium.net/v3")
+API = os.environ.get("MNEMOLITH_JAVA_API", "https://api.adoptium.net/v3")
 JAVA_DIR = config.HOME / "java"
 
 
@@ -84,7 +84,7 @@ def _download(client, pkg: dict, dest: Path, progress: Callable[[int, int], None
                 progress(done, total)
     if digest.hexdigest() != pkg["sha256"]:
         raise JavaDownloadError("The Java download didn't match its published checksum, so it wasn't used. "
-                                "Run `aether-cache setup` to try again; if it keeps happening, install Java 11+ "
+                                "Run `mnemolith setup` to try again; if it keeps happening, install Java 11+ "
                                 f"yourself from https://adoptium.net.\nStill stuck? Tell us: {config.CONTACT_URL}")
 
 
@@ -132,7 +132,7 @@ def _bar(done: int, total: int) -> None:
 
 
 def download(progress: Callable[[int, int], None] = _bar, attempts: int = 3) -> Path:
-    """Downloads and unpacks Java into ~/.aether-cache/java. Returns the path to its java program."""
+    """Downloads and unpacks Java into ~/.mnemolith/java. Returns the path to its java program."""
     config.HOME.mkdir(parents=True, exist_ok=True)
     last_error = None
     for attempt in range(1, attempts + 1):
@@ -167,7 +167,7 @@ def download(progress: Callable[[int, int], None] = _bar, attempts: int = 3) -> 
     raise JavaDownloadError(
         f"Couldn't download Java from adoptium.net ({_short(last_error)}).\n"
         f"If your network blocks adoptium.net or github.com (common on work or school networks), try another\n"
-        f"network and run `aether-cache setup` again, or install Java 11+ yourself from https://adoptium.net.\n"
+        f"network and run `mnemolith setup` again, or install Java 11+ yourself from https://adoptium.net.\n"
         f"Still stuck? Tell us: {config.CONTACT_URL}")
 
 

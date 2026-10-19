@@ -1,15 +1,19 @@
-[![Aether Cache: memory that stays true to your code](https://anishchugh05.github.io/Aether-Cache-Redis-Compatible-Vector-Store/assets/og-image.png)](https://anishchugh05.github.io/Aether-Cache-Redis-Compatible-Vector-Store/)
+[![Mnemolith: memory that stays true to your code](https://mnemolith.dev/assets/og-image.png)](https://mnemolith.dev/)
 
-# Aether Cache
+# Mnemolith
 
 **Shared memory for AI coding tools that stays true to your code.**
 
-<!-- mcp-name: io.github.anishchugh05/aether-cache -->
+*Mnemolith (NEE-mo-lith): "memory stone." What your AI learns, carved where every tool can read it. ([Why the name](https://mnemolith.dev/about.html#name))*
 
-**[Website](https://anishchugh05.github.io/Aether-Cache-Redis-Compatible-Vector-Store/)** · **[PyPI](https://pypi.org/project/aether-cache/)**
+> **Formerly Aether Cache.** If you installed `aether-cache`, see [Moving from Aether Cache](#moving-from-aether-cache): your memories come with you.
+
+<!-- mcp-name: io.github.anishchugh05/mnemolith -->
+
+**[Website](https://mnemolith.dev/)** · **[PyPI](https://pypi.org/project/mnemolith/)**
 
 Claude Code, Cursor, and other AI tools each forget your project between sessions, and when they do remember things,
-nothing checks whether those memories are still correct. Aether Cache gives every tool one shared, local memory, and keeps
+nothing checks whether those memories are still correct. Mnemolith gives every tool one shared, local memory, and keeps
 it honest:
 
 - **Memories go stale when the code changes.** Each memory is linked to the files it's about, with a snapshot of their
@@ -20,13 +24,13 @@ it honest:
 - **Every memory can explain itself.** Which tool and session saved it, which file versions it was based on, and every
   change since: created, seen again, went stale, confirmed, replaced.
 - **It works with the files you already use.** Current memories sync into a managed section of `AGENTS.md` and
-  `CLAUDE.md`, so they're committed, reviewed in PRs, and visible to teammates who don't run Aether Cache.
+  `CLAUDE.md`, so they're committed, reviewed in PRs, and visible to teammates who don't run Mnemolith.
 
 It runs entirely on your machine, on top of a database engine I wrote from scratch.
 
 ## Not a Redis clone
 
-Aether Cache started as a from-scratch rebuild of Redis in Java, then kept going. Every layer here is written from
+Mnemolith started as a from-scratch rebuild of Redis in Java, then kept going. Every layer here is written from
 scratch, and each one does something the layer beneath it can't:
 
 | Layer | What it adds |
@@ -42,7 +46,7 @@ memory layer, git awareness, and MCP server are things Redis doesn't do at all.
 
 ```
 Claude Code ─┐                       ┌─────────────────────────────────────────────┐
-Cursor ──────┼─ MCP ─► aether_cache ─┼─ RESP ─► Java engine (Main.java)            │
+Cursor ──────┼─ MCP ─► mnemolith ─┼─ RESP ─► Java engine (Main.java)            │
 other tools ─┘   (Python: embeddings,│          memories, HNSW vector index,       │
                   git hashing, sync) │          history, append-only file on disk  │
                                      └─────────────────────────────────────────────┘
@@ -50,11 +54,11 @@ other tools ─┘   (Python: embeddings,│          memories, HNSW vector inde
 
 ## What it looks like
 
-The dashboard (`aether-cache ui`): memories whose files changed wait for a decision, with the file versions side by side.
+The dashboard (`mnemolith ui`): memories whose files changed wait for a decision, with the file versions side by side.
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://anishchugh05.github.io/Aether-Cache-Redis-Compatible-Vector-Store/assets/dashboard-dark.png">
-  <img alt="The Aether Cache dashboard showing stale memories and a possible conflict" src="https://anishchugh05.github.io/Aether-Cache-Redis-Compatible-Vector-Store/assets/dashboard-light.png">
+  <source media="(prefers-color-scheme: dark)" srcset="https://mnemolith.dev/assets/dashboard-dark.png">
+  <img alt="The Mnemolith dashboard showing stale memories and a possible conflict" src="https://mnemolith.dev/assets/dashboard-light.png">
 </picture>
 
 And from your AI tool's side, a memory linked to a file, the file changes, and the next lookup catches it:
@@ -103,23 +107,23 @@ m1 retired; m3 replaces it.
 One line installs everything and runs setup. On macOS or Linux:
 
 ```sh
-curl -fsSL https://anishchugh05.github.io/Aether-Cache-Redis-Compatible-Vector-Store/install.sh | sh
+curl -fsSL https://mnemolith.dev/install.sh | sh
 ```
 
 On Windows (PowerShell):
 
 ```powershell
-powershell -ExecutionPolicy ByPass -c "irm https://raw.githubusercontent.com/anishchugh05/Aether-Cache-Redis-Compatible-Vector-Store/main/docs/install.ps1 | iex"
+powershell -ExecutionPolicy ByPass -c "irm https://mnemolith.dev/install.ps1 | iex"
 ```
 
 The installer ([install.sh](docs/install.sh), [install.ps1](docs/install.ps1)) gets [uv](https://docs.astral.sh/uv/) if you
-don't have it (uv brings Python), installs Aether Cache, and runs `aether-cache setup`. Prefer your own tools? Any of
-these works, followed by `aether-cache setup`:
+don't have it (uv brings Python), installs Mnemolith, and runs `mnemolith setup`. Prefer your own tools? Any of
+these works, followed by `mnemolith setup`:
 
 ```sh
-uv tool install aether-cache
-pipx install aether-cache
-pip install aether-cache        # Python 3.10+
+uv tool install mnemolith
+pipx install mnemolith
+pip install mnemolith        # Python 3.10+
 ```
 
 `setup` starts the engine in the background, downloads the embedding model once (about 90 MB), and connects every
@@ -130,33 +134,42 @@ repo and try:
 
 Then start a new session and ask how to run the tests.
 
-The engine runs on Java 11+. If you have it, it's used. If you don't, Aether Cache downloads a private copy (about
-50 MB) into `~/.aether-cache/java`, checks it against its published checksum, and uses it only for Aether Cache;
-nothing is installed system-wide, and `aether-cache uninstall` removes it.
+The engine runs on Java 11+. If you have it, it's used. If you don't, Mnemolith downloads a private copy (about
+50 MB) into `~/.mnemolith/java`, checks it against its published checksum, and uses it only for Mnemolith;
+nothing is installed system-wide, and `mnemolith uninstall` removes it.
 
-Already keep notes for your AI in `CLAUDE.md`, `AGENTS.md`, or Cursor rules? Run `aether-cache import` in the repo
+Already keep notes for your AI in `CLAUDE.md`, `AGENTS.md`, or Cursor rules? Run `mnemolith import` in the repo
 (or use **Import notes** in the dashboard) to turn them into memories, linked to the files they mention.
 
 Memories are kept per project (the git repo's folder name), so projects never mix. Everything stays on your machine:
-the engine only accepts connections from it, and your memories live in `~/.aether-cache`.
+the engine only accepts connections from it, and your memories live in `~/.mnemolith`.
 
 | Command | What it does |
 |---|---|
-| `aether-cache setup` | One-time setup: engine, model, and AI tools |
-| `aether-cache add` | Adds the repo you're in (or a path) so the dashboard can check its files; the dashboard can also find and add repos for you |
-| `aether-cache ui` | Opens the dashboard: see what your AI remembers, and confirm or retire memories whose files changed |
-| `aether-cache import` | Turns the notes in `CLAUDE.md`, `AGENTS.md`, and Cursor rules into memories; shows them first and asks |
-| `aether-cache export` | Saves memories, with their linked files and history, to a JSON file (`-p` for one project) |
-| `aether-cache status` | Is it running, and what's in this project's memory |
-| `aether-cache doctor` | Checks everything and tells you how to fix what's wrong |
-| `aether-cache list` / `recall "query"` / `explain m1` | Look at memories from the terminal |
-| `aether-cache sync` | Writes current memories into `AGENTS.md` / `CLAUDE.md` |
-| `aether-cache connect cursor` | Connects one tool (`--print` shows config for any other MCP tool) |
-| `aether-cache start` / `stop` | Runs or stops the engine (it also starts on its own when a tool needs it) |
-| `aether-cache uninstall` | Disconnects your AI tools, stops the engine, and asks before deleting memories |
+| `mnemolith setup` | One-time setup: engine, model, and AI tools |
+| `mnemolith add` | Adds the repo you're in (or a path) so the dashboard can check its files; the dashboard can also find and add repos for you |
+| `mnemolith ui` | Opens the dashboard: see what your AI remembers, and confirm or retire memories whose files changed |
+| `mnemolith import` | Turns the notes in `CLAUDE.md`, `AGENTS.md`, and Cursor rules into memories; shows them first and asks |
+| `mnemolith export` | Saves memories, with their linked files and history, to a JSON file (`-p` for one project) |
+| `mnemolith status` | Is it running, and what's in this project's memory |
+| `mnemolith doctor` | Checks everything and tells you how to fix what's wrong |
+| `mnemolith list` / `recall "query"` / `explain m1` | Look at memories from the terminal |
+| `mnemolith sync` | Writes current memories into `AGENTS.md` / `CLAUDE.md` |
+| `mnemolith connect cursor` | Connects one tool (`--print` shows config for any other MCP tool) |
+| `mnemolith start` / `stop` | Runs or stops the engine (it also starts on its own when a tool needs it) |
+| `mnemolith uninstall` | Disconnects your AI tools, stops the engine, and asks before deleting memories |
 
-If `aether-cache` isn't found after installing, run `uv tool update-shell` and open a new terminal. Port 7380 taken?
-Set `AETHER_PORT` and run `setup` again. To uninstall: `aether-cache uninstall`, then `uv tool uninstall aether-cache`.
+If `mnemolith` isn't found after installing, run `uv tool update-shell` and open a new terminal. Port 7380 taken?
+Set `MNEMOLITH_PORT` and run `setup` again. To uninstall: `mnemolith uninstall`, then `uv tool uninstall mnemolith`.
+
+## Moving from Aether Cache
+
+Mnemolith used to be called Aether Cache. If you installed `aether-cache`, run the installer above. It installs
+Mnemolith, removes `aether-cache`, moves your memories from `~/.aether-cache` to `~/.mnemolith`, and reconnects your AI
+tools. Nothing is lost, and memories synced into `CLAUDE.md` / `AGENTS.md` are picked up where they are.
+
+Installed some other way? Install `mnemolith` the same way, run `mnemolith setup`, then remove `aether-cache`
+(`uv tool uninstall aether-cache`, `pipx uninstall aether-cache`, or `pip uninstall aether-cache`).
 
 ## Tools the AI can call
 
@@ -170,7 +183,7 @@ Set `AETHER_PORT` and run `setup` again. To uninstall: `aether-cache uninstall`,
 | `confirm_memory(id)` | Brings back a memory that's still true after its files changed, re-linked to the current versions. |
 | `check_stale()` | Runs the file check on demand. |
 | `list_conflicts()` / `resolve_conflict(...)` | Reviews pairs of very similar memories that may contradict each other. |
-| `sync_to_files()` | Writes current memories into `AGENTS.md` / `CLAUDE.md` (also: `aether-cache sync`). |
+| `sync_to_files()` | Writes current memories into `AGENTS.md` / `CLAUDE.md` (also: `mnemolith sync`). |
 
 ## Design decisions, and what the measurements said
 
@@ -217,7 +230,7 @@ persistence hardening, and the memory layer are my own additions.
 
 `redis-benchmark -t set,get`, 100K requests, 50 parallel clients, 3-byte values, same machine:
 
-| | Aether Cache | Redis 8.10.2 | Aether Cache as % of Redis |
+| | Mnemolith | Redis 8.10.2 | Mnemolith as % of Redis |
 |---|---|---|---|
 | SET | 205.8K ops/sec | 233.6K ops/sec | 88% |
 | GET | 225.7K ops/sec | 242.7K ops/sec | 93% |
@@ -327,7 +340,7 @@ python memory_mcp/calibrate.py                     # embedding similarity calibr
 
 ## Related work
 
-Aether Cache is an early, open-source project. These are the production systems in the same space:
+Mnemolith is an early, open-source project. These are the production systems in the same space:
 
 - **Vector search in Redis-style stores:**
   - [Redis 8 vector sets](https://redis.io/docs/latest/develop/data-types/vector-sets/) and
@@ -337,12 +350,12 @@ Aether Cache is an early, open-source project. These are the production systems 
 - **Memory for AI agents:** [Mem0](https://github.com/mem0ai/mem0), [Zep](https://www.getzep.com/),
   [Letta](https://github.com/letta-ai/letta), and the
   [MCP reference memory server](https://github.com/modelcontextprotocol/servers).
-- **Instruction files:** [AGENTS.md](https://agents.md/) and `CLAUDE.md`. Aether Cache syncs into these rather than
+- **Instruction files:** [AGENTS.md](https://agents.md/) and `CLAUDE.md`. Mnemolith syncs into these rather than
   replacing them.
 
 ## Status and limitations
 
-Aether Cache is v1 and early. It works end to end in automated tests and is now being tried in real Claude Code sessions.
+Mnemolith is v1 and early. It works end to end in automated tests and is now being tried in real Claude Code sessions.
 
 **Not done yet:**
 - **A with-memory vs. without-memory evaluation** on real coding tasks, to measure whether it actually reduces
@@ -366,15 +379,15 @@ Aether Cache is v1 and early. It works end to end in automated tests and is now 
 
 ```
 src/main/java/Main.java      the engine (single file, from the CodeCrafters setup)
-aether_cache/                the Python package behind the `aether-cache` command
+mnemolith/                   the Python package behind the `mnemolith` command
   server.py                  MCP server: embeddings, git staleness, AGENTS.md/CLAUDE.md sync
   engine.py                  finds Java, starts and stops the engine in the background
   javart.py                  downloads a private copy of Java when the computer has none
-  connect.py                 registers Aether Cache with Claude Code, Cursor, and Codex
-  cli.py                     the `aether-cache` command
-  ui.py, ui/index.html       the dashboard (`aether-cache ui`): a local server, its API, and the page
+  connect.py                 registers Mnemolith with Claude Code, Cursor, and Codex
+  cli.py                     the `mnemolith` command
+  ui.py, ui/index.html       the dashboard (`mnemolith ui`): a local server, its API, and the page
   portability.py             import from notes files, export to JSON
-  engine/aether-engine.jar   the prebuilt engine (rebuild with `python scripts/build_engine.py`)
+  engine/mnemolith-engine.jar the prebuilt engine (rebuild with `python scripts/build_engine.py`)
 memory_mcp/calibrate.py      similarity calibration for duplicate/contradiction thresholds
 vector_bench.py              HNSW benchmark (writes results.json)
 crash_test.py                kill -9 crash-safety test
@@ -382,10 +395,10 @@ crash_test.py                kill -9 crash-safety test
 
 ## Releasing
 
-Bump the version in `pyproject.toml`, `aether_cache/__init__.py`, and `server.json`, commit, then:
+Bump the version in `pyproject.toml`, `mnemolith/__init__.py`, and `server.json`, commit, then:
 
 ```sh
-git tag v0.1.9 && git push --tags
+git tag v0.2.0 && git push --tags
 ```
 
 The [release workflow](.github/workflows/release.yml) checks the versions match, builds and smoke-tests the package,

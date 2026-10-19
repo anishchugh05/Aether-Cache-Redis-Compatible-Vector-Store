@@ -16,7 +16,7 @@ import redis
 
 from . import config
 
-JAR = Path(__file__).resolve().parent / "engine" / "aether-engine.jar"
+JAR = Path(__file__).resolve().parent / "engine" / "mnemolith-engine.jar"
 MIN_JAVA = 11
 
 
@@ -34,7 +34,7 @@ def java_install_hint() -> str:
         how = "winget install EclipseAdoptium.Temurin.21.JRE   (or download it from https://adoptium.net)"
     else:
         how = "sudo apt install openjdk-21-jre-headless   (or your distro's equivalent, or https://adoptium.net)"
-    return (f"Run `aether-cache setup` and it downloads a private copy of Java for you, "
+    return (f"Run `mnemolith setup` and it downloads a private copy of Java for you, "
             f"or install Java {MIN_JAVA}+ yourself:\n    {how}")
 
 
@@ -59,7 +59,7 @@ def find_java() -> Tuple[str, int]:
     says "Unable to locate a Java Runtime"."""
     from .javart import private_java
     candidates = []
-    if not os.environ.get("AETHER_IGNORE_SYSTEM_JAVA"):  # testing only: act as if this computer had no Java
+    if not os.environ.get("MNEMOLITH_IGNORE_SYSTEM_JAVA"):  # testing only: act as if this computer had no Java
         if os.environ.get("JAVA_HOME"):
             candidates.append(str(Path(os.environ["JAVA_HOME"]) / "bin" / ("java.exe" if os.name == "nt" else "java")))
         if shutil.which("java"):
@@ -117,7 +117,7 @@ def _port_open(timeout: float = 0.5) -> bool:
 
 
 def probe() -> Optional[str]:
-    """"aether" if our engine answers on the port, "other" if some other program does, None if nothing does."""
+    """"ours" if our engine answers on the port, "other" if some other program does, None if nothing does."""
     if not _port_open():
         return None
     # no retries: newer redis-py retries failed connections several times, which on Windows
@@ -130,8 +130,8 @@ def probe() -> Optional[str]:
     except redis.ResponseError:
         return "other"
     try:
-        c.execute_command("MEM.LIST", "__aether_probe__")  # only Aether Cache knows this command
-        return "aether"
+        c.execute_command("MEM.LIST", "__mnemolith_probe__")  # only Mnemolith knows this command
+        return "ours"
     except redis.ResponseError:
         return "other"
     except (redis.ConnectionError, redis.TimeoutError, OSError):
@@ -142,8 +142,8 @@ def probe() -> Optional[str]:
 
 def port_taken_message() -> str:
     return (f"Port {config.PORT} is already used by another program (maybe a real Redis). "
-            f"Pick a different port for Aether Cache: set AETHER_PORT (e.g. export AETHER_PORT={config.PORT + 10}), "
-            f"then run `aether-cache setup` again so your AI tools use it too.")
+            f"Pick a different port for Mnemolith: set MNEMOLITH_PORT (e.g. export MNEMOLITH_PORT={config.PORT + 10}), "
+            f"then run `mnemolith setup` again so your AI tools use it too.")
 
 
 # ---------- starting and stopping ----------
@@ -175,7 +175,7 @@ def _start_lock():
 def _migrate_old_data() -> Optional[str]:
     """Earlier versions (called memstore) kept data in ~/.memstore. Copy it over once, leaving the original."""
     old = Path.home() / ".memstore"
-    if old.is_dir() and not config.DATA_DIR.exists() and not os.environ.get("AETHER_HOME"):
+    if old.is_dir() and not config.DATA_DIR.exists() and not os.environ.get("MNEMOLITH_HOME"):
         shutil.copytree(old, config.DATA_DIR)
         return f"Copied your existing memories from {old} to {config.DATA_DIR}."
     return None
@@ -209,7 +209,7 @@ def jar_fingerprint() -> str:
 
 def needs_upgrade() -> bool:
     """True if the engine we started earlier came from a different engine file than this install's
-    (e.g. after `uv tool upgrade aether-cache`). Engines we didn't start are left alone."""
+    (e.g. after `uv tool upgrade mnemolith`). Engines we didn't start are left alone."""
     if running_pid() is None:
         return False
     try:
@@ -223,8 +223,12 @@ def start(wait: float = 60) -> str:
     """Starts the engine in the background (if it isn't already running) and waits until it answers.
     If the running engine is from an older install, restarts it on the new one (no data is lost:
     every acknowledged write is already on disk)."""
+    from . import legacy
+    moved = legacy.migrate_home()  # first start after the rename from Aether Cache
+    if moved:
+        print(moved, file=sys.stderr, flush=True)
     state = probe()
-    if state == "aether" and not needs_upgrade():
+    if state == "ours" and not needs_upgrade():
         return f"Engine already running on {config.HOST}:{config.PORT}."
     if state == "other":
         raise EngineError(port_taken_message())
@@ -232,12 +236,12 @@ def start(wait: float = 60) -> str:
         raise EngineError(f"The engine at {config.HOST}:{config.PORT} isn't reachable, and it's on another "
                           f"machine, so it can't be started from here.")
     if not JAR.is_file():
-        raise EngineError(f"The engine file is missing ({JAR}). Reinstall Aether Cache.")
+        raise EngineError(f"The engine file is missing ({JAR}). Reinstall Mnemolith.")
 
     upgraded = False
     with _start_lock():
         state = probe()  # another session may have started it while we waited for the lock
-        if state == "aether":
+        if state == "ours":
             if not needs_upgrade():
                 return f"Engine already running on {config.HOST}:{config.PORT}."
             stop()
@@ -272,7 +276,7 @@ def start(wait: float = 60) -> str:
                 raise EngineError(f"The engine stopped right after starting. Last lines of {config.LOG_FILE}:\n"
                                   + _log_tail())
             state = probe()
-            if state == "aether":
+            if state == "ours":
                 config.STAMP_FILE.write_text(jar_fingerprint())
                 started = (f"Engine {'updated and restarted' if upgraded else 'started'} on {config.HOST}:{config.PORT} "
                            f"(data in {config.DATA_DIR}).")
@@ -285,17 +289,17 @@ def start(wait: float = 60) -> str:
 
 
 def _java_or_download() -> str:
-    """Java for starting the engine. If there isn't any, downloads Aether Cache's private copy, so the engine
-    also starts for people whose AI tool runs the server without `aether-cache setup` having run first.
+    """Java for starting the engine. If there isn't any, downloads Mnemolith's private copy, so the engine
+    also starts for people whose AI tool runs the server without `mnemolith setup` having run first.
     Called while holding the start lock, so several sessions starting at once download it only once."""
     try:
         return find_java()[0]
     except EngineError as missing:
-        if os.environ.get("AETHER_NO_JAVA_DOWNLOAD"):
+        if os.environ.get("MNEMOLITH_NO_JAVA_DOWNLOAD"):
             raise
         from . import javart
         notice = (f"{str(missing).splitlines()[0]} Downloading a private copy of Java {javart.FEATURE_VERSION} "
-                  f"for Aether Cache into {javart.JAVA_DIR} (about 50 MB, only the first time).")
+                  f"for Mnemolith into {javart.JAVA_DIR} (about 50 MB, only the first time).")
         print(notice, file=sys.stderr, flush=True)  # stderr: stdout carries the MCP protocol
         try:
             with open(config.LOG_FILE, "a") as log:
@@ -310,7 +314,7 @@ def _java_or_download() -> str:
 
 
 def ensure_running() -> None:
-    if probe() != "aether" or needs_upgrade():
+    if probe() != "ours" or needs_upgrade():
         start()
 
 
@@ -329,11 +333,11 @@ def _alive(pid: int) -> bool:
 
 def stop() -> str:
     pid = _read_pid()
-    if probe() != "aether":
+    if probe() != "ours":
         config.PID_FILE.unlink(missing_ok=True)
         return "Engine isn't running."
     if pid is None or not _alive(pid):
-        return (f"An engine is answering on port {config.PORT}, but it wasn't started by `aether-cache start`, "
+        return (f"An engine is answering on port {config.PORT}, but it wasn't started by `mnemolith start`, "
                 f"so it wasn't stopped. Stop it the way you started it.")
     os.kill(pid, signal.SIGTERM)  # safe: with appendfsync always, every acknowledged write is on disk already
     for _ in range(50):

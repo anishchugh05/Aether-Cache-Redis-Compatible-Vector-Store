@@ -1,4 +1,4 @@
-"""The `aether-cache` command."""
+"""The `mnemolith` command."""
 import argparse
 import sys
 from collections import Counter
@@ -35,7 +35,7 @@ def _java_for_setup():
         reason = str(missing).splitlines()[0]  # "Java isn't installed." or "Found Java 8, which is too old."
         print(f"[ .... ] {reason} Downloading a private copy of Java {javart.FEATURE_VERSION} (Eclipse Temurin, "
               f"from adoptium.net, about 50 MB, only the first time).\n"
-              f"         It goes in {javart.JAVA_DIR}, only Aether Cache uses it, and nothing else on your "
+              f"         It goes in {javart.JAVA_DIR}, only Mnemolith uses it, and nothing else on your "
               f"computer changes.", flush=True)
         try:
             javart.download()
@@ -45,14 +45,14 @@ def _java_for_setup():
 
 
 def cmd_setup(args) -> int:
-    print(f"Setting up Aether Cache {__version__}\n")
+    print(f"Setting up Mnemolith {__version__}\n")
     try:
         java, major = _java_for_setup()
         _say(OK, f"Java {major} ({_java_label(java)})")
         _say(OK, engine.start())
     except engine.EngineError as e:
         _say(FAIL, str(e))
-        print("\nFix that, then run `aether-cache setup` again."
+        print("\nFix that, then run `mnemolith setup` again."
               + ("" if config.CONTACT_URL in str(e) else f"\nStill stuck? Tell us: {config.CONTACT_URL}"))
         return 1
 
@@ -63,7 +63,7 @@ def cmd_setup(args) -> int:
             print("[ .... ] Loading the embedding model...", flush=True)
         else:
             print(f"[ .... ] Downloading the embedding model from Hugging Face (huggingface.co, about 90 MB, only the "
-                  f"first time)\n         into {config.MODELS_DIR}. It's what lets Aether Cache search memories by "
+                  f"first time)\n         into {config.MODELS_DIR}. It's what lets Mnemolith search memories by "
                   f"meaning...", flush=True)
         try:
             from .server import embedder
@@ -73,7 +73,7 @@ def cmd_setup(args) -> int:
             detail = (str(e).strip().splitlines() or [type(e).__name__])[0][:160]
             _say(WARN, f"Couldn't download the embedding model from Hugging Face ({detail}).\n"
                        f"If your network blocks huggingface.co (common on work or school networks), try another\n"
-                       f"network, then run `aether-cache setup` again. Otherwise it downloads the first time your\n"
+                       f"network, then run `mnemolith setup` again. Otherwise it downloads the first time your\n"
                        f"AI saves or searches a memory. Still stuck? Tell us: {config.CONTACT_URL}")
 
     tools = args.tools or connect.detected()
@@ -88,14 +88,14 @@ def cmd_setup(args) -> int:
             failed.append(tool)
     if failed:
         print(f"\nAlmost done: fix the {', '.join(failed)} problem above, then run "
-              f"`aether-cache connect {' '.join(failed)}`.")
+              f"`mnemolith connect {' '.join(failed)}`.")
         return 1
 
     print("\nDone. Open your AI tool in any git repo and try:\n"
           '  "Remember that our tests need DOCKER_HOST set. It depends on docker-compose.yml."\n'
           "Then, in a new session:\n"
           '  "How do I run the tests?"\n'
-          "\nSee and fix what your AI remembers any time with `aether-cache ui`.")
+          "\nSee and fix what your AI remembers any time with `mnemolith ui`.")
     return 0
 
 
@@ -115,23 +115,23 @@ def cmd_stop(args) -> int:
 
 def cmd_status(args) -> int:
     state = engine.probe()
-    if state == "aether":
+    if state == "ours":
         pid = engine.running_pid()
         print(f"Engine: running on {config.HOST}:{config.PORT}" + (f" (pid {pid})" if pid else ""))
     elif state == "other":
         print(f"Engine: not running. {engine.port_taken_message()}")
         return 1
     else:
-        print("Engine: not running (it starts automatically when your AI tool needs it, or run `aether-cache start`)")
+        print("Engine: not running (it starts automatically when your AI tool needs it, or run `mnemolith start`)")
     print(f"Data:   {config.DATA_DIR}")
-    if state == "aether":
+    if state == "ours":
         from .server import project_name, run
         project = project_name()
         counts = Counter(status for _, status, _, _ in run("MEM.LIST", project, "STATUS", "any"))
         summary = ", ".join(f"{counts[s]} {s}" for s in ("active", "stale", "superseded") if counts[s])
         print(f"This project ({project}): {summary or 'no memories yet'}")
     connected = [t for t in connect.TOOLS if connect.CHECKS[t]()]
-    print("Connected tools: " + (", ".join(connected) if connected else "none (run `aether-cache connect`)"))
+    print("Connected tools: " + (", ".join(connected) if connected else "none (run `mnemolith connect`)"))
     return 0
 
 
@@ -154,7 +154,7 @@ def cmd_connect(args) -> int:
 
 def cmd_doctor(args) -> int:
     problems = 0
-    _say(OK, f"Aether Cache {__version__}, Python {sys.version.split()[0]} ({sys.executable})")
+    _say(OK, f"Mnemolith {__version__}, Python {sys.version.split()[0]} ({sys.executable})")
     try:
         java, major = engine.find_java()
         _say(OK, f"Java {major} ({_java_label(java)})")
@@ -164,19 +164,19 @@ def cmd_doctor(args) -> int:
     if engine.JAR.is_file():
         _say(OK, f"Engine file present ({engine.JAR.name})")
     else:
-        _say(FAIL, f"Engine file missing ({engine.JAR}). Reinstall Aether Cache.")
+        _say(FAIL, f"Engine file missing ({engine.JAR}). Reinstall Mnemolith.")
         problems += 1
     state = engine.probe()
-    if state == "aether":
+    if state == "ours":
         _say(OK, f"Engine answering on {config.HOST}:{config.PORT}")
     elif state == "other":
         _say(FAIL, engine.port_taken_message())
         problems += 1
     else:
-        _say(WARN, f"Engine not running. It starts automatically when needed; `aether-cache start` starts it now.\n"
+        _say(WARN, f"Engine not running. It starts automatically when needed; `mnemolith start` starts it now.\n"
                    f"If it won't start, see {config.LOG_FILE}")
     if config.FAKE_EMBEDDER:
-        _say(WARN, "Test embedder is on (AETHER_EMBEDDER=fake): search quality is poor. Unset it for real use.")
+        _say(WARN, "Test embedder is on (MNEMOLITH_EMBEDDER=fake): search quality is poor. Unset it for real use.")
     elif any(config.MODELS_DIR.glob("*")):
         _say(OK, f"Embedding model downloaded ({config.MODELS_DIR})")
     else:
@@ -185,7 +185,7 @@ def cmd_doctor(args) -> int:
         if connect.CHECKS[tool]():
             _say(OK, f"Connected to {tool}")
         elif tool in connect.detected():
-            _say(WARN, f"{tool} is installed but not connected. Run `aether-cache connect {tool}`.")
+            _say(WARN, f"{tool} is installed but not connected. Run `mnemolith connect {tool}`.")
     from .server import git_toplevel, project_name
     top = git_toplevel()
     _say(OK if top else WARN, f"This folder's project: {project_name()}"
@@ -257,7 +257,7 @@ def cmd_import(args) -> int:
         print(server.store_down(e))
         return 1
     if not found["files"]:
-        print(f"No notes files in {root}.\nAether Cache looks for: " + ", ".join(portability.NOTE_FILES)
+        print(f"No notes files in {root}.\nMnemolith looks for: " + ", ".join(portability.NOTE_FILES)
               + ", and .cursor/rules/.")
         return 0
     notes = found["notes"]
@@ -284,7 +284,7 @@ def cmd_import(args) -> int:
         print("\nNothing new to import.")
         return 0
     if left_out:
-        print("\nTo pick notes one by one, including the left-out ones, use Import notes in `aether-cache ui`.")
+        print("\nTo pick notes one by one, including the left-out ones, use Import notes in `mnemolith ui`.")
     if not args.yes and not _ask(f"\nImport {len(new)} {'memory' if len(new) == 1 else 'memories'} into {project}?"):
         print("Nothing imported." + ("" if sys.stdin.isatty() else " Pass --yes to import without asking."))
         return 0
@@ -299,7 +299,7 @@ def cmd_import(args) -> int:
     saved = len(result["saved"])
     print(f"Imported {saved} {'memory' if saved == 1 else 'memories'} into {project}."
           + (f" {result['duplicates']} matched memories you already had." if result["duplicates"] else "")
-          + (f"\n{result['conflicts']} may contradict an existing memory: decide in `aether-cache ui`."
+          + (f"\n{result['conflicts']} may contradict an existing memory: decide in `mnemolith ui`."
              if result["conflicts"] else ""))
     return 0
 
@@ -330,30 +330,30 @@ def cmd_export(args) -> int:
 def _uninstall_command() -> str:
     exe = sys.executable.replace("\\", "/")
     if "/uv/tools/" in exe or "/uv/tool/" in exe:
-        return "uv tool uninstall aether-cache"
+        return "uv tool uninstall mnemolith"
     if "/pipx/" in exe:
-        return "pipx uninstall aether-cache"
-    return f"{sys.executable} -m pip uninstall aether-cache"
+        return "pipx uninstall mnemolith"
+    return f"{sys.executable} -m pip uninstall mnemolith"
 
 
 def cmd_uninstall(args) -> int:
     import shutil
-    print("Uninstalling Aether Cache\n")
+    print("Uninstalling Mnemolith\n")
     failed = False
     for tool in connect.TOOLS:
         done, message = connect.DISCONNECTORS[tool]()
         _say(OK if done else FAIL, message)
         failed |= not done
-    print("         Restart any AI tools that are open, so they stop using Aether Cache.")
+    print("         Restart any AI tools that are open, so they stop using Mnemolith.")
     count = None
-    if engine.probe() == "aether":
+    if engine.probe() == "ours":
         try:
             from .ui import all_memories
             count = len(all_memories())
         except Exception:
             pass
     stopped = engine.stop()
-    still_running = engine.probe() == "aether"
+    still_running = engine.probe() == "ours"
     _say(FAIL if still_running else OK, stopped)
     failed |= still_running
 
@@ -366,14 +366,14 @@ def cmd_uninstall(args) -> int:
     if has_data and not delete:
         what = f"Your {count} {'memory is' if count == 1 else 'memories are'}" if count else "Your memories are"
         print(f"\n{what} in {config.HOME}.")
-        delete = _ask("Delete them too? This can't be undone (keep a copy first with `aether-cache export`).")
+        delete = _ask("Delete them too? This can't be undone (keep a copy first with `mnemolith export`).")
     if has_data and delete:
         shutil.rmtree(config.HOME, ignore_errors=True)
         _say(OK, f"Deleted {config.HOME}")
     elif has_data:
         from . import javart
         if javart.remove():
-            _say(OK, f"Removed Aether Cache's private copy of Java ({javart.JAVA_DIR})")
+            _say(OK, f"Removed Mnemolith's private copy of Java ({javart.JAVA_DIR})")
         _say(OK, f"Kept your memories in {config.HOME}. Reinstall any time and they're back.")
     print(f"\nLast step, remove the program itself:\n  {_uninstall_command()}")
     return 1 if failed else 0
@@ -390,10 +390,14 @@ def main(argv=None) -> None:
         sys.stdout.reconfigure(errors="replace")  # never crash printing on a limited console
     except (AttributeError, ValueError):
         pass
+    from . import legacy
+    moved = legacy.migrate_home()  # first run after the rename from Aether Cache
+    if moved:
+        print(moved + "\n", file=sys.stderr)  # stderr: when an AI tool runs `serve`, stdout carries the MCP protocol
     parser = argparse.ArgumentParser(
-        prog="aether-cache",
+        prog="mnemolith",
         description="Shared memory for AI coding tools that stays true to your code.")
-    parser.add_argument("--version", action="version", version=f"aether-cache {__version__}")
+    parser.add_argument("--version", action="version", version=f"mnemolith {__version__}")
     sub = parser.add_subparsers(dest="command", metavar="<command>")
 
     p = sub.add_parser("setup", help="one-time setup: start the engine, download the model, connect your AI tools")
@@ -429,7 +433,7 @@ def main(argv=None) -> None:
     p.set_defaults(func=cmd_import)
     p = sub.add_parser("export", help="save memories, with their history, to a JSON file")
     p.add_argument("--project", "-p", action="append", metavar="NAME", help="only this project (repeatable; default: all)")
-    p.add_argument("--output", "-o", metavar="FILE", help="where to write it (default: aether-cache-<date>.json here; - for stdout)")
+    p.add_argument("--output", "-o", metavar="FILE", help="where to write it (default: mnemolith-<date>.json here; - for stdout)")
     p.set_defaults(func=cmd_export)
     p = sub.add_parser("uninstall", help="disconnect your AI tools, stop the engine, and optionally delete memories")
     p.add_argument("--delete-data", action="store_true", help="also delete all memories, without asking")
@@ -437,17 +441,17 @@ def main(argv=None) -> None:
     p = sub.add_parser("ui", help="open the dashboard: see and fix what your AI tools remember")
     p.add_argument("--port", type=int, help="port for the dashboard (default 7381)")
     p.add_argument("--no-open", action="store_true", help="don't open a browser, just print the link")
-    p.set_defaults(func=lambda a: __import__("aether_cache.ui", fromlist=["serve"]).serve(a.port, not a.no_open))
+    p.set_defaults(func=lambda a: __import__("mnemolith.ui", fromlist=["serve"]).serve(a.port, not a.no_open))
     sub.add_parser("serve", help="run the MCP server (your AI tool runs this for you)").set_defaults(func=cmd_serve)
 
     args = parser.parse_args(argv)
     unknown = [t for t in getattr(args, "tools", None) or [] if t not in connect.TOOLS]
     if unknown:
         parser.error(f"unknown tool {unknown[0]!r}; choose from {', '.join(connect.TOOLS)} "
-                     f"(or `aether-cache connect --print` for any other MCP tool)")
+                     f"(or `mnemolith connect --print` for any other MCP tool)")
     if not getattr(args, "func", None):
         parser.print_help()
-        print("\nNew here? Run `aether-cache setup`.")
+        print("\nNew here? Run `mnemolith setup`.")
         sys.exit(0)
     try:
         sys.exit(args.func(args))

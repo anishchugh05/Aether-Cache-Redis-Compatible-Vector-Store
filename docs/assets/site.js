@@ -37,7 +37,7 @@
     const theme = isDark() ? "light" : "dark";
     document.documentElement.dataset.theme = theme;
     try {
-      localStorage.setItem("aether-theme", theme);
+      localStorage.setItem("mnemolith-theme", theme);
     } catch (e) {}
     syncThemeButton();
   });
@@ -67,9 +67,9 @@
   }
   try {
     const arrival = JSON.parse(
-      sessionStorage.getItem("aether-arrival") || "null",
+      sessionStorage.getItem("mnemolith-arrival") || "null",
     );
-    sessionStorage.removeItem("aether-arrival");
+    sessionStorage.removeItem("mnemolith-arrival");
     if (
       arrival &&
       arrival.url === location.href &&
@@ -104,7 +104,7 @@
       return;
     try {
       sessionStorage.setItem(
-        "aether-arrival",
+        "mnemolith-arrival",
         JSON.stringify({ url: destination.href, at: Date.now() }),
       );
     } catch (e) {}
@@ -307,7 +307,7 @@
     const button = form.querySelector('button[type="submit"]');
     const label = button.textContent;
     const issues =
-      "https://github.com/anishchugh05/Aether-Cache-Redis-Compatible-Vector-Store/issues";
+      "https://github.com/anishchugh05/mnemolith/issues";
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
       if (!form.reportValidity()) return;

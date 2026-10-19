@@ -1,4 +1,4 @@
-# Aether Cache — multi-page website
+# Mnemolith — multi-page website
 
 The approved mineral-green identity, IBM Plex Sans typography, and interactive memory demonstration are preserved. Real document navigation now connects four focused pages. This supersedes the original single-file requirement at the user's request.
 
@@ -55,7 +55,7 @@ Upload all four HTML files plus assets/ and the font license together. README.md
 
 ## v0.1.2 content update
 
-The existing identity, typography, colors, layout system, animations, and illustrative demo are preserved. A dashboard section follows the hero and precedes the existing directory. It uses the real supplied dashboard images, framed as an app window, and the existing code/copy control for `aether-cache ui`.
+The existing identity, typography, colors, layout system, animations, and illustrative demo are preserved. A dashboard section follows the hero and precedes the existing directory. It uses the real supplied dashboard images, framed as an app window, and the existing code/copy control for `mnemolith ui`.
 
 A native picture element selects the full dashboard on desktop and the supplied decision-card close-up at 600px and below. Dark sources follow prefers-color-scheme until the visitor chooses a site theme. That override updates both dark source media queries. Images have intrinsic half-resolution dimensions, responsive sizing, lazy loading, asynchronous decoding, and descriptive alt text. No new image animation was introduced. Supplied screenshots remain byte-for-byte unchanged.
 

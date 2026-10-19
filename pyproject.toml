@@ -3,8 +3,8 @@ requires = ["hatchling>=1.27"]
 build-backend = "hatchling.build"
 
 [project]
-name = "aether-cache"
-version = "0.1.9"
+name = "mnemolith"
+version = "0.2.0"
 description = "Shared memory for AI coding tools that stays true to your code."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -18,20 +18,20 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://anishchugh05.github.io/Aether-Cache-Redis-Compatible-Vector-Store/"
-Repository = "https://github.com/anishchugh05/Aether-Cache-Redis-Compatible-Vector-Store"
+Homepage = "https://mnemolith.dev/"
+Repository = "https://github.com/anishchugh05/mnemolith"
 
 [project.scripts]
-aether-cache = "aether_cache.cli:main"
+mnemolith = "mnemolith.cli:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["aether_cache"]
-artifacts = ["aether_cache/engine/aether-engine.jar"]  # *.jar is gitignored; ship this one anyway
+packages = ["mnemolith"]
+artifacts = ["mnemolith/engine/mnemolith-engine.jar"]  # *.jar is gitignored; ship this one anyway
 
 [tool.hatch.build.targets.sdist]
-include = ["aether_cache", "README.md", "LICENSE", "pyproject.toml"]
-artifacts = ["aether_cache/engine/aether-engine.jar"]
+include = ["mnemolith", "README.md", "LICENSE", "pyproject.toml"]
+artifacts = ["mnemolith/engine/mnemolith-engine.jar"]
 
 [tool.uv]
 # rebuild when the code changes, not only when this file does (uv's default for local installs)
-cache-keys = [{ file = "pyproject.toml" }, { file = "aether_cache/**/*.py" }, { file = "aether_cache/engine/*.jar" }, { file = "aether_cache/ui/*.html" }, { file = "aether_cache/ui/fonts/*" }]
+cache-keys = [{ file = "pyproject.toml" }, { file = "mnemolith/**/*.py" }, { file = "mnemolith/engine/*.jar" }, { file = "mnemolith/ui/*.html" }, { file = "mnemolith/ui/fonts/*" }]

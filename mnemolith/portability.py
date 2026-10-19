@@ -1,5 +1,5 @@
 """
-Moving memories in and out of Aether Cache.
+Moving memories in and out of Mnemolith.
 
 Import reads the notes people already keep for their AI tools (CLAUDE.md, AGENTS.md, Cursor rules, ...) and
 turns each bullet or short paragraph into a memory, linked to any repo files it mentions, so imported memories
@@ -11,7 +11,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional
 
-from . import __version__, server
+from . import __version__, connect, server
 
 # Notes files AI tools read, relative to the repo's top folder. Checked in this order; a file that is a
 # symlink to one already read (CLAUDE.md -> AGENTS.md is common) is read once.
@@ -22,10 +22,10 @@ MIN_NOTE, MAX_NOTE = 12, 1000  # characters; shorter is a fragment, longer is a 
 MAX_FILE_BYTES = 512_000
 MAX_LINKS = 6
 
-# Sections Aether Cache writes into these files itself. Importing them would copy our own output back in.
-INSTR_START = "<!-- aether-cache:instructions:start -->"
-INSTR_END = "<!-- aether-cache:instructions:end -->"
-MANAGED = [(server.SYNC_START, server.SYNC_END), server.OLD_MARKERS, (INSTR_START, INSTR_END)]
+# Sections Mnemolith writes into these files itself. Importing them would copy our own output back in.
+INSTR_START = "<!-- mnemolith:instructions:start -->"
+INSTR_END = "<!-- mnemolith:instructions:end -->"
+MANAGED = [(server.SYNC_START, server.SYNC_END), *server.OLD_MARKERS, (INSTR_START, INSTR_END), *connect.OLD_INSTR]
 
 
 class NotesError(Exception):
@@ -399,7 +399,7 @@ def export(projects: Optional[List[str]] = None) -> dict:
         })
     names = sorted(set(by_project) | ({p for p in (wanted or ())}), key=str.lower)
     return {
-        "format": "aether-cache-export", "format_version": 1, "aether_cache_version": __version__,
+        "format": "mnemolith-export", "format_version": 1, "mnemolith_version": __version__,
         "exported_at": datetime.now().astimezone().isoformat(timespec="seconds"),
         "projects": [{"name": n, "repo": repos.get(n), "memories": sorted(
             by_project.get(n, []), key=lambda x: int(x["id"][1:]))} for n in names],
@@ -408,4 +408,4 @@ def export(projects: Optional[List[str]] = None) -> dict:
 
 def export_filename(project: Optional[str] = None) -> str:
     safe = re.sub(r"[^\w.-]+", "-", project).strip("-") if project else ""
-    return f"aether-cache-{safe + '-' if safe else ''}{datetime.now():%Y-%m-%d}.json"
+    return f"mnemolith-{safe + '-' if safe else ''}{datetime.now():%Y-%m-%d}.json"

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
-<title>Aether Cache</title>
+<title>Mnemolith</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect x='1' y='1' width='14' height='14' rx='3.5' fill='%2310282A'/%3E%3Ccircle cx='8' cy='8' r='3' fill='%233BC08F'/%3E%3C/svg%3E">
 <style>
 /* IBM Plex, self-hosted and shipped with the package: the dashboard loads nothing from the internet. */
@@ -375,11 +375,11 @@ ol.timeline .details { font-size: var(--t-sm); color: var(--ink-2); margin: 1px 
 const TOKEN = (() => {
   const fromHash = new URLSearchParams(location.hash.slice(1)).get("token");
   if (fromHash) {
-    try { sessionStorage.setItem("aether-token", fromHash); } catch (e) {}
+    try { sessionStorage.setItem("mnemolith-token", fromHash); } catch (e) {}
     history.replaceState(null, "", location.pathname);
     return fromHash;
   }
-  try { return sessionStorage.getItem("aether-token"); } catch (e) { return null; }
+  try { return sessionStorage.getItem("mnemolith-token"); } catch (e) { return null; }
 })();
 
 const state = {
@@ -451,7 +451,7 @@ const exact = (ms) => new Date(ms).toLocaleString();
 const time = (ms) => h("time", { datetime: new Date(ms).toISOString(), title: exact(ms) }, ago(ms));
 
 async function api(path, body) {
-  const opts = { headers: { "X-Aether-Token": TOKEN || "" } };
+  const opts = { headers: { "X-Mnemolith-Token": TOKEN || "" } };
   if (body) {
     opts.method = "POST";
     opts.headers["Content-Type"] = "application/json";
@@ -462,7 +462,7 @@ async function api(path, body) {
     res = await fetch(path, opts);
   } catch (e) {
     state.engineUp = false; renderEngine();
-    throw new Error("The dashboard stopped. Run `aether-cache ui` again.");
+    throw new Error("The dashboard stopped. Run `mnemolith ui` again.");
   }
   const data = await res.json().catch(() => ({}));
   state.engineUp = res.status !== 503; renderEngine();
@@ -531,7 +531,7 @@ async function loadProjects() {
   state.version = data.version;
   if (!state.project || !state.projects.some((p) => p.name === state.project)) {
     let saved = null;
-    try { saved = sessionStorage.getItem("aether-project"); } catch (e) {}
+    try { saved = sessionStorage.getItem("mnemolith-project"); } catch (e) {}
     state.project = (state.projects.find((p) => p.name === saved) || state.projects[0] || {}).name || null;
   }
 }
@@ -588,7 +588,7 @@ async function selectProject(name) {
   showView("project");
   state.project = name; state.q = ""; state.filter = "any"; state.selected = null; state.detail = null;
   state.memories = []; state.listLoaded = false; state.attention = null;
-  try { sessionStorage.setItem("aether-project", name); } catch (e) {}
+  try { sessionStorage.setItem("mnemolith-project", name); } catch (e) {}
   document.querySelector(".app").classList.remove("has-detail");
   const search = document.getElementById("search"); if (search) search.value = "";
   renderProjects(); renderHead(); renderAttention(); renderList();
@@ -716,7 +716,7 @@ function renderAdd() {
     h("div", { class: "page-head" },
       h("h1", { tabindex: "-1" }, state.firstRun ? "Pick the repos you work in" : "Add a project"),
       h("p", { class: "lede", style: "margin-top:6px" }, state.firstRun
-        ? "Aether Cache keeps your AI tools’ memories per repo and checks them against the code. Add the repos you use with AI. Only their location is saved, and nothing leaves this computer."
+        ? "Mnemolith keeps your AI tools’ memories per repo and checks them against the code. Add the repos you use with AI. Only their location is saved, and nothing leaves this computer."
         : "Add a repo so its memories show up here and get checked against its files. Only its location is saved, and nothing leaves this computer.")),
     sourceTabs, body);
   if (state.source === "local") renderRepoList();
@@ -905,7 +905,7 @@ function renderImport() {
     put(view, head, h("div", { class: "panel note" },
       h("p", {}, h("strong", {}, s.files.length ? "No notes to import. " : "No notes files found. "),
         s.files.length ? "The notes files here have nothing that reads like a fact yet."
-                       : "Aether Cache looks for CLAUDE.md, AGENTS.md, .cursorrules, .cursor/rules/, and .github/copilot-instructions.md in "),
+                       : "Mnemolith looks for CLAUDE.md, AGENTS.md, .cursorrules, .cursor/rules/, and .github/copilot-instructions.md in "),
       s.files.length ? null : h("p", { class: "mono" }, pathNodes(s.root))),
       h("div", { class: "import-bar" }, h("span", { class: "count" }), h("button", { class: "btn", type: "button", onclick: () => showView("project") }, "Back")));
     return;
@@ -989,7 +989,7 @@ function renderTools() {
   const head = h("div", { class: "page-head" },
     h("h1", { tabindex: "-1" }, "AI tools"),
     h("p", { class: "lede", style: "margin-top:6px" },
-      "Aether Cache is connected to these tools so they save and recall project memories. Disconnecting removes only what Aether Cache added to the tool’s settings. Your memories stay."));
+      "Mnemolith is connected to these tools so they save and recall project memories. Disconnecting removes only what Mnemolith added to the tool’s settings. Your memories stay."));
   if (!t) {
     put(view, head, h("div", { class: "panel calm" }, "Checking your AI tools…"));
     return;
@@ -1014,8 +1014,8 @@ function renderTools() {
     h("section", { "aria-labelledby": "uninstall-h" },
       h("h2", { class: "section", id: "uninstall-h" }, "Uninstall"),
       h("div", { class: "panel note" },
-        h("p", {}, "To remove Aether Cache completely, run this in a terminal. It disconnects every tool, stops the engine, and asks before deleting your memories."),
-        h("code", { class: "cmd" }, "aether-cache uninstall"),
+        h("p", {}, "To remove Mnemolith completely, run this in a terminal. It disconnects every tool, stops the engine, and asks before deleting your memories."),
+        h("code", { class: "cmd" }, "mnemolith uninstall"),
         h("p", {}, "Then remove the program itself:"),
         h("code", { class: "cmd" }, t.uninstall))));
 }
@@ -1117,7 +1117,7 @@ function renderList() {
       put(list, h("div", { class: "panel note" },
         h("p", {}, h("strong", {}, "No memories yet. "), "Open your AI tool in this repo and ask it to remember something that a future session should know, for example:"),
         h("p", { class: "example" }, "“Remember that our tests need DOCKER_HOST set. It depends on docker-compose.yml.”"),
-        h("p", {}, "It will show up here, and Aether Cache will flag it if docker-compose.yml changes.")));
+        h("p", {}, "It will show up here, and Mnemolith will flag it if docker-compose.yml changes.")));
       return;
     }
     put(list, h("div", { class: "panel empty" }, state.q ? `No ${kind}memories match “${state.q}”.` : `No ${kind}memories in this project.`));
@@ -1184,7 +1184,7 @@ function renderShell() {
   });
   put(document.getElementById("root"), h("div", { class: "app" },
     h("nav", { class: "rail", "aria-label": "Projects" },
-      h("div", { class: "wordmark" }, mark, "Aether Cache"),
+      h("div", { class: "wordmark" }, mark, "Mnemolith"),
       h("h2", { id: "projects-h" }, "Projects"),
       h("ul", { class: "projects", id: "projects" }),
       h("button", { class: "add-project", id: "add-project", type: "button", onclick: () => openAdd(false) }, icon("plus", 14), "Add project"),
@@ -1217,7 +1217,7 @@ document.addEventListener("keydown", (e) => { if (e.key === "Escape" && state.se
 (async function start() {
   if (!TOKEN) {
     renderBlocker("Open the dashboard from your terminal",
-      h("p", {}, "For your security, this page only works when opened by ", h("code", {}, "aether-cache ui"), ", which gives it a one-time key."));
+      h("p", {}, "For your security, this page only works when opened by ", h("code", {}, "mnemolith ui"), ", which gives it a one-time key."));
     return;
   }
   try {

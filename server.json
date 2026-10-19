@@ -1,19 +1,19 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "io.github.anishchugh05/aether-cache",
-  "title": "Aether Cache",
+  "name": "io.github.anishchugh05/mnemolith",
+  "title": "Mnemolith",
   "description": "Shared local memory for AI coding tools that stays true to your code.",
   "repository": {
-    "url": "https://github.com/anishchugh05/Aether-Cache-Redis-Compatible-Vector-Store",
+    "url": "https://github.com/anishchugh05/mnemolith",
     "source": "github"
   },
-  "websiteUrl": "https://anishchugh05.github.io/Aether-Cache-Redis-Compatible-Vector-Store/",
-  "version": "0.1.9",
+  "websiteUrl": "https://mnemolith.dev/",
+  "version": "0.2.0",
   "packages": [
     {
       "registryType": "pypi",
-      "identifier": "aether-cache",
-      "version": "0.1.9",
+      "identifier": "mnemolith",
+      "version": "0.2.0",
       "runtimeHint": "uvx",
       "transport": {
         "type": "stdio"

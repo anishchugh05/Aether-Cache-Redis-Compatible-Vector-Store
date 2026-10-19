@@ -1,5 +1,5 @@
 """
-Builds the engine jar that ships inside the Python package: aether_cache/engine/aether-engine.jar.
+Builds the engine jar that ships inside the Python package: mnemolith/engine/mnemolith-engine.jar.
 
 Run it after changing src/main/java/Main.java:   python scripts/build_engine.py
 Needs a JDK (javac + jar). The jar targets Java 11, so it runs on any Java 11+ runtime.
@@ -12,7 +12,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 SOURCE = ROOT / "src" / "main" / "java" / "Main.java"
-JAR = ROOT / "aether_cache" / "engine" / "aether-engine.jar"
+JAR = ROOT / "mnemolith" / "engine" / "mnemolith-engine.jar"
 
 
 def main() -> int:

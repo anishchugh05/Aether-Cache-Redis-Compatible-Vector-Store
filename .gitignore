@@ -1,5 +1,5 @@
 *.jar
-!aether_cache/engine/aether-engine.jar
+!mnemolith/engine/mnemolith-engine.jar
 target/
 .idea/
 src/main/java/embeddings_cache.npz

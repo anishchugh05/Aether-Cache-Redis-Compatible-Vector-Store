@@ -10,18 +10,18 @@
     <meta content="width=device-width,initial-scale=1" name="viewport" />
     <meta content="light dark" name="color-scheme" />
     <meta
-      content="Install Aether Cache with one command, connect Claude Code, Cursor, and Codex, and save your first project memory."
+      content="Install Mnemolith with one command, connect Claude Code, Cursor, and Codex, and save your first project memory."
       name="description"
     />
-    <title>Install — Aether Cache</title>
+    <title>Install — Mnemolith</title>
     <script>
       try {
-        const t = localStorage.getItem("aether-theme");
+        const t = localStorage.getItem("mnemolith-theme");
         if (t === "light" || t === "dark")
           document.documentElement.dataset.theme = t;
       } catch (e) {}
     </script>
-    <link href="assets/site.css?v=7" rel="stylesheet" />
+    <link href="assets/site.css?v=8" rel="stylesheet" />
     <link
       as="font"
       crossorigin=""
@@ -29,39 +29,39 @@
       rel="preload"
       type="font/woff2"
     />
-    <meta property="og:title" content="Install — Aether Cache" />
+    <meta property="og:title" content="Install — Mnemolith" />
     <meta
       property="og:description"
-      content="Install Aether Cache with one command, connect Claude Code, Cursor, and Codex, and save your first project memory."
+      content="Install Mnemolith with one command, connect Claude Code, Cursor, and Codex, and save your first project memory."
     />
     <meta property="og:type" content="website" />
     <meta
       property="og:url"
-      content="https://anishchugh05.github.io/Aether-Cache-Redis-Compatible-Vector-Store/install.html"
+      content="https://mnemolith.dev/install.html"
     />
     <meta
       property="og:image"
-      content="https://anishchugh05.github.io/Aether-Cache-Redis-Compatible-Vector-Store/assets/og-image.png"
+      content="https://mnemolith.dev/assets/og-image.png"
     />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta
       property="og:image:alt"
-      content="Aether Cache. Memory that stays true to your code. A dashboard card shows a stale memory and the file versions behind it."
+      content="Mnemolith. Memory that stays true to your code. A dashboard card shows a stale memory and the file versions behind it."
     />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Install — Aether Cache" />
+    <meta name="twitter:title" content="Install — Mnemolith" />
     <meta
       name="twitter:description"
-      content="Install Aether Cache with one command, connect Claude Code, Cursor, and Codex, and save your first project memory."
+      content="Install Mnemolith with one command, connect Claude Code, Cursor, and Codex, and save your first project memory."
     />
     <meta
       name="twitter:image"
-      content="https://anishchugh05.github.io/Aether-Cache-Redis-Compatible-Vector-Store/assets/og-image.png"
+      content="https://mnemolith.dev/assets/og-image.png"
     />
     <meta
       name="twitter:image:alt"
-      content="Aether Cache. Memory that stays true to your code. A stale-memory review card."
+      content="Mnemolith. Memory that stays true to your code. A stale-memory review card."
     />
     <!-- Privacy-friendly visit counts (no cookies): https://aethercache.goatcounter.com -->
     <script async data-goatcounter="https://aethercache.goatcounter.com/count" src="https://gc.zgo.at/count.js"></script>
@@ -70,7 +70,7 @@
     <a class="skip" href="#main">Skip to content</a>
     <div class="wrap">
       <header class="masthead">
-        <a aria-label="Aether Cache home" class="brand" href="index.html"
+        <a aria-label="Mnemolith home" class="brand" href="index.html"
           ><svg
             aria-hidden="true"
             class="brand-mark"
@@ -87,7 +87,7 @@
               stroke="currentColor"
               stroke-width="2"
             ></path></svg
-          >Aether Cache</a
+          >Mnemolith</a
         >
         <nav aria-label="Main navigation">
           <a href="index.html">Home</a
@@ -132,9 +132,9 @@
               remembering.
             </p>
             <div class="install-version">
-              v0.1.9, available on
-              <a href="https://pypi.org/project/aether-cache/">PyPI</a> and listed on
-              <a href="https://glama.ai/mcp/servers/anishchugh05/Aether-Cache-Redis-Compatible-Vector-Store">Glama</a>
+              v0.2.0, available on
+              <a href="https://pypi.org/project/mnemolith/">PyPI</a> and listed on
+              <a href="https://glama.ai/mcp/servers/anishchugh05/mnemolith">Glama</a>
             </div>
             <p class="setup-note">
               Everything runs on your machine. No account to create, no hosted
@@ -150,11 +150,11 @@
                   <div class="prereq-row">
                     <strong>macOS and Linux</strong>
                     <div class="code-block">
-                      <pre>curl -fsSL https://anishchugh05.github.io/Aether-Cache-Redis-Compatible-Vector-Store/install.sh | sh</pre>
+                      <pre>curl -fsSL https://mnemolith.dev/install.sh | sh</pre>
                       <button
                         aria-label="Copy the macOS and Linux install command"
                         class="copy-button"
-                        data-copy="curl -fsSL https://anishchugh05.github.io/Aether-Cache-Redis-Compatible-Vector-Store/install.sh | sh"
+                        data-copy="curl -fsSL https://mnemolith.dev/install.sh | sh"
                       >
                         Copy
                       </button>
@@ -163,11 +163,11 @@
                   <div class="prereq-row">
                     <strong>Windows (PowerShell)</strong>
                     <div class="code-block">
-                      <pre>powershell -ExecutionPolicy ByPass -c &quot;irm https://raw.githubusercontent.com/anishchugh05/Aether-Cache-Redis-Compatible-Vector-Store/main/docs/install.ps1 | iex&quot;</pre>
+                      <pre>powershell -ExecutionPolicy ByPass -c &quot;irm https://mnemolith.dev/install.ps1 | iex&quot;</pre>
                       <button
                         aria-label="Copy the Windows install command"
                         class="copy-button"
-                        data-copy="powershell -ExecutionPolicy ByPass -c &quot;irm https://raw.githubusercontent.com/anishchugh05/Aether-Cache-Redis-Compatible-Vector-Store/main/docs/install.ps1 | iex&quot;"
+                        data-copy="powershell -ExecutionPolicy ByPass -c &quot;irm https://mnemolith.dev/install.ps1 | iex&quot;"
                       >
                         Copy
                       </button>
@@ -176,15 +176,15 @@
                 </div>
                 <p>
                   One line does everything: it installs uv (which brings Python)
-                  if you don&#8217;t have it, installs Aether Cache, and runs
+                  if you don&#8217;t have it, installs Mnemolith, and runs
                   setup. Setup starts the engine, downloads the embedding model
                   once (~90 MB), and connects Claude Code, Cursor, and Codex.
-                  No Java? It downloads a private copy just for Aether Cache.
+                  No Java? It downloads a private copy just for Mnemolith.
                 </p>
                 <p class="prereq-note">
                   Like to read scripts before running them? Here are
                   <a href="install.sh">install.sh</a> and
-                  <a href="https://github.com/anishchugh05/Aether-Cache-Redis-Compatible-Vector-Store/blob/main/docs/install.ps1">install.ps1</a>.
+                  <a href="https://github.com/anishchugh05/mnemolith/blob/main/docs/install.ps1">install.ps1</a>.
                   Prefer your own tools? See
                   <a href="#other-ways">other ways to install</a>.
                 </p>
@@ -205,40 +205,40 @@
             </div>
             <ul aria-label="Useful commands" class="command-list">
               <li>
-                <code>aether-cache ui</code
+                <code>mnemolith ui</code
                 ><span>Open the dashboard to review and fix memories.</span>
               </li>
               <li>
-                <code>aether-cache add</code
+                <code>mnemolith add</code
                 ><span
                   >Add the project you're in so the dashboard checks its
                   files.</span
                 >
               </li>
               <li>
-                <code>aether-cache import</code
+                <code>mnemolith import</code
                 ><span
                   >Turn the notes in your CLAUDE.md, AGENTS.md, or Cursor rules
                   into memories. You review them first.</span
                 >
               </li>
               <li>
-                <code>aether-cache export</code
+                <code>mnemolith export</code
                 ><span>Save every memory and its history to a JSON file.</span>
               </li>
               <li>
-                <code>aether-cache status</code><span>See what’s running.</span>
+                <code>mnemolith status</code><span>See what’s running.</span>
               </li>
               <li>
-                <code>aether-cache doctor</code
+                <code>mnemolith doctor</code
                 ><span>Check everything and see how to fix problems.</span>
               </li>
               <li>
-                <code>aether-cache list</code
+                <code>mnemolith list</code
                 ><span>Inspect your saved memories.</span>
               </li>
               <li>
-                <code>aether-cache uninstall</code
+                <code>mnemolith uninstall</code
                 ><span
                   >Disconnect your AI tools and stop the engine. It asks before
                   deleting any memories.</span
@@ -249,18 +249,18 @@
               <h2 class="install-step-title">Other ways to install</h2>
               <p>
                 Already use a Python tool manager? Install with it, then run
-                <code>aether-cache setup</code>. Every option gets the same
-                version from <a href="https://pypi.org/project/aether-cache/">PyPI</a>,
+                <code>mnemolith setup</code>. Every option gets the same
+                version from <a href="https://pypi.org/project/mnemolith/">PyPI</a>,
                 and setup still takes care of Java for you.
               </p>
               <div class="prereq-row">
                     <strong>uv</strong>
                     <div class="code-block">
-                      <pre>uv tool install aether-cache</pre>
+                      <pre>uv tool install mnemolith</pre>
                       <button
                         aria-label="Copy the uv install command"
                         class="copy-button"
-                        data-copy="uv tool install aether-cache"
+                        data-copy="uv tool install mnemolith"
                       >
                         Copy
                       </button>
@@ -269,11 +269,11 @@
               <div class="prereq-row">
                     <strong>pipx</strong>
                     <div class="code-block">
-                      <pre>pipx install aether-cache</pre>
+                      <pre>pipx install mnemolith</pre>
                       <button
                         aria-label="Copy the pipx install command"
                         class="copy-button"
-                        data-copy="pipx install aether-cache"
+                        data-copy="pipx install mnemolith"
                       >
                         Copy
                       </button>
@@ -282,11 +282,11 @@
               <div class="prereq-row">
                     <strong>pip (Python 3.10+)</strong>
                     <div class="code-block">
-                      <pre>pip install aether-cache</pre>
+                      <pre>pip install mnemolith</pre>
                       <button
                         aria-label="Copy the pip install command"
                         class="copy-button"
-                        data-copy="pip install aether-cache"
+                        data-copy="pip install mnemolith"
                       >
                         Copy
                       </button>
@@ -309,43 +309,43 @@
             <details class="faq-item">
               <summary>Does my code or my data leave my computer?</summary>
               <p>
-                No. Aether Cache runs entirely on your machine: the engine only accepts connections from your own computer, and your memories live in <code>~/.aether-cache</code>. The only things it downloads are, once, the embedding model it uses to search memories by meaning (about 90 MB) and, if you don’t have Java, a private copy of Java. Your AI tool still talks to its own provider the way it always does; Aether Cache doesn’t add anything to that.
+                No. Mnemolith runs entirely on your machine: the engine only accepts connections from your own computer, and your memories live in <code>~/.mnemolith</code>. The only things it downloads are, once, the embedding model it uses to search memories by meaning (about 90 MB) and, if you don’t have Java, a private copy of Java. Your AI tool still talks to its own provider the way it always does; Mnemolith doesn’t add anything to that.
               </p>
             </details>
             <details class="faq-item">
               <summary>Which AI tools does it work with?</summary>
               <p>
-                <code>aether-cache setup</code> connects Claude Code, Cursor, and Codex automatically, for all your projects. Any other tool that supports MCP works too: run <code>aether-cache connect --print</code> for the settings to paste into it.
+                <code>mnemolith setup</code> connects Claude Code, Cursor, and Codex automatically, for all your projects. Any other tool that supports MCP works too: run <code>mnemolith connect --print</code> for the settings to paste into it.
               </p>
             </details>
             <details class="faq-item">
               <summary>What are the ways to install it, and which should I use?</summary>
               <p>
-                Most people should use the one-line installer at the top of this page. It installs everything it needs (uv, and through it Python), installs Aether Cache, and runs setup.
+                Most people should use the one-line installer at the top of this page. It installs everything it needs (uv, and through it Python), installs Mnemolith, and runs setup.
               </p>
               <p>
-                If you already manage Python tools yourself, use what you know: <code>uv tool install aether-cache</code>, <code>pipx install aether-cache</code>, or <code>pip install aether-cache</code> (Python 3.10 or newer), then run <code>aether-cache setup</code>. They all install the same version, and you don’t need Java for any of them.
+                If you already manage Python tools yourself, use what you know: <code>uv tool install mnemolith</code>, <code>pipx install mnemolith</code>, or <code>pip install mnemolith</code> (Python 3.10 or newer), then run <code>mnemolith setup</code>. They all install the same version, and you don’t need Java for any of them.
               </p>
             </details>
             <details class="faq-item">
               <summary>Do I need Java?</summary>
               <p>
-                No. The engine runs on Java 11 or newer. If you already have it, Aether Cache uses yours. If you don’t, Aether Cache downloads a private copy (about 50 MB) into <code>~/.aether-cache/java</code> the first time it needs one, checks it against its published checksum, and uses it only for itself. Nothing is installed system-wide, and uninstalling removes it.
+                No. The engine runs on Java 11 or newer. If you already have it, Mnemolith uses yours. If you don’t, Mnemolith downloads a private copy (about 50 MB) into <code>~/.mnemolith/java</code> the first time it needs one, checks it against its published checksum, and uses it only for itself. Nothing is installed system-wide, and uninstalling removes it.
               </p>
             </details>
             <details class="faq-item">
               <summary>What does “stale” mean?</summary>
               <p>
-                When your AI saves a memory, it can link it to the files the fact depends on, like <code>docker-compose.yml</code>. If one of those files changes, the memory is marked stale: your AI stops seeing it, and the dashboard (<code>aether-cache ui</code>) asks you to decide. Click <strong>Still true</strong> to keep it, or <strong>Retire</strong> if it’s wrong now.
+                When your AI saves a memory, it can link it to the files the fact depends on, like <code>docker-compose.yml</code>. If one of those files changes, the memory is marked stale: your AI stops seeing it, and the dashboard (<code>mnemolith ui</code>) asks you to decide. Click <strong>Still true</strong> to keep it, or <strong>Retire</strong> if it’s wrong now.
               </p>
             </details>
             <details class="faq-item">
               <summary>How is this different from CLAUDE.md or my AI’s built-in memory?</summary>
               <p>
-                Notes files and built-in memories never know when they’ve gone out of date, and each tool keeps its own. Aether Cache is one memory shared by all your AI tools, and it checks memories against your files so outdated ones stop being used.
+                Notes files and built-in memories never know when they’ve gone out of date, and each tool keeps its own. Mnemolith is one memory shared by all your AI tools, and it checks memories against your files so outdated ones stop being used.
               </p>
               <p>
-                Already have notes? Run <code>aether-cache import</code>, or click <strong>Import notes</strong> in the dashboard, to turn your CLAUDE.md, AGENTS.md, and Cursor rules into memories. You review them before anything is saved.
+                Already have notes? Run <code>mnemolith import</code>, or click <strong>Import notes</strong> in the dashboard, to turn your CLAUDE.md, AGENTS.md, and Cursor rules into memories. You review them before anything is saved.
               </p>
             </details>
             <details class="faq-item">
@@ -363,31 +363,37 @@
             <details class="faq-item">
               <summary>Can my team share memories?</summary>
               <p>
-                Not yet: each computer keeps its own memory. To share today, run <code>aether-cache sync</code>, which writes the current memories into your repo’s AGENTS.md and CLAUDE.md so they’re committed with the code. Shared team memory is planned.
+                Not yet: each computer keeps its own memory. To share today, run <code>mnemolith sync</code>, which writes the current memories into your repo’s AGENTS.md and CLAUDE.md so they’re committed with the code. Shared team memory is planned.
               </p>
             </details>
             <details class="faq-item">
               <summary>How do I back up or move my memories?</summary>
               <p>
-                Run <code>aether-cache export</code>, or click <strong>Export</strong> in the dashboard. You get a JSON file with every memory, the files it’s linked to, and its full history.
+                Run <code>mnemolith export</code>, or click <strong>Export</strong> in the dashboard. You get a JSON file with every memory, the files it’s linked to, and its full history.
+              </p>
+            </details>
+            <details class="faq-item">
+              <summary>I installed Aether Cache. What do I do?</summary>
+              <p>
+                Mnemolith used to be called Aether Cache. Run the install command above: it installs Mnemolith, removes <code>aether-cache</code>, moves your memories over, and reconnects your AI tools. Nothing is lost.
               </p>
             </details>
             <details class="faq-item">
               <summary>How do I uninstall it?</summary>
               <p>
-                Run <code>aether-cache uninstall</code>. It disconnects your AI tools, stops the engine, removes the private Java copy if there is one, and asks before deleting your memories. Then remove the program with <code>uv tool uninstall aether-cache</code>.
+                Run <code>mnemolith uninstall</code>. It disconnects your AI tools, stops the engine, removes the private Java copy if there is one, and asks before deleting your memories. Then remove the program with <code>uv tool uninstall mnemolith</code>.
               </p>
             </details>
             <details class="faq-item">
               <summary>Is it free?</summary>
               <p>
-                Yes. There’s no account and no paid plan, and the code is on <a href="https://github.com/anishchugh05/Aether-Cache-Redis-Compatible-Vector-Store">GitHub</a>.
+                Yes. There’s no account and no paid plan, and the code is on <a href="https://github.com/anishchugh05/mnemolith">GitHub</a>.
               </p>
             </details>
             <details class="faq-item">
               <summary>Something isn’t working. What should I do?</summary>
               <p>
-                Run <code>aether-cache doctor</code>: it checks everything and says how to fix what it finds. If the <code>aether-cache</code> command isn’t found after installing, run <code>uv tool update-shell</code> and open a new terminal. Still stuck? Send the output of <code>aether-cache doctor</code> with the form below.
+                Run <code>mnemolith doctor</code>: it checks everything and says how to fix what it finds. If the <code>mnemolith</code> command isn’t found after installing, run <code>uv tool update-shell</code> and open a new terminal. Still stuck? Send the output of <code>mnemolith doctor</code> with the form below.
               </p>
             </details>
           </div>
@@ -400,7 +406,7 @@
             <p>
               Stuck on a step, found a bug, or have an idea? Send a note and it
               comes straight to me. For bugs, you can also
-              <a href="https://github.com/anishchugh05/Aether-Cache-Redis-Compatible-Vector-Store/issues">open an issue on GitHub</a>.
+              <a href="https://github.com/anishchugh05/mnemolith/issues">open an issue on GitHub</a>.
             </p>
             <p class="contact-note">Your email is only used to reply to you.</p>
           </div>
@@ -431,7 +437,7 @@
               ><textarea
                 maxlength="5000"
                 name="message"
-                placeholder="What happened, and what you were trying to do. Your OS and the output of aether-cache doctor help a lot."
+                placeholder="What happened, and what you were trying to do. Your OS and the output of mnemolith doctor help a lot."
                 required=""
                 rows="6"
               ></textarea>
@@ -439,7 +445,7 @@
             <input
               name="_subject"
               type="hidden"
-              value="Aether Cache: a message from the website"
+              value="Mnemolith: a message from the website"
             />
             <label aria-hidden="true" class="trap"
               >Leave this empty<input
@@ -486,15 +492,15 @@
         <span>© 2026 Anish Chugh</span>
         <div class="footer-links">
           <a href="install.html#faq">FAQ</a
-          ><a href="https://github.com/anishchugh05/Aether-Cache-Redis-Compatible-Vector-Store/blob/main/LICENSE"
+          ><a href="https://github.com/anishchugh05/mnemolith/blob/main/LICENSE"
             >License</a
           ><a href="install.html#contact">Contact</a
           ><a
-            href="https://github.com/anishchugh05/Aether-Cache-Redis-Compatible-Vector-Store"
+            href="https://github.com/anishchugh05/mnemolith"
             >GitHub</a
-          ><a href="https://pypi.org/project/aether-cache/">PyPI</a
-          ><a href="https://glama.ai/mcp/servers/anishchugh05/Aether-Cache-Redis-Compatible-Vector-Store">Glama</a
-          ><span>Aether Cache v0.1.9</span>
+          ><a href="https://pypi.org/project/mnemolith/">PyPI</a
+          ><a href="https://glama.ai/mcp/servers/anishchugh05/mnemolith">Glama</a
+          ><span>Mnemolith v0.2.0</span>
         </div>
       </footer>
     </div>
@@ -504,6 +510,6 @@
       id="copy-status"
       role="status"
     ></div>
-    <script defer="" src="assets/site.js?v=7"></script>
+    <script defer="" src="assets/site.js?v=8"></script>
   </body>
 </html>
