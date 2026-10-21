@@ -398,7 +398,7 @@ crash_test.py                kill -9 crash-safety test
 Bump the version in `pyproject.toml`, `mnemolith/__init__.py`, and `server.json`, commit, then:
 
 ```sh
-git tag v0.2.0 && git push --tags
+git tag v0.2.1 && git push --tags
 ```
 
 The [release workflow](.github/workflows/release.yml) checks the versions match, builds and smoke-tests the package,

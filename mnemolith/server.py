@@ -297,6 +297,53 @@ def confirm(memory_id: str, root: Optional[Path] = None) -> Optional[bool]:
     return bool(files)
 
 
+def status_reason(memory_id: str) -> str:
+    """Why a memory has its current status, from the latest status change in its history."""
+    r = run("MEM.WHY", memory_id) or []
+    for _t, event, details in reversed(dict(zip(r[0::2], r[1::2])).get("history", [])):
+        if "->" in event:
+            return details
+    return ""
+
+
+FILE_CHANGE = "since this was saved"  # how check_staleness phrases a file-change reason
+
+
+def add_memory(project: str, fact: str, linked_files: str = "", source: str = "",
+               vector: Optional[List[str]] = None) -> tuple:
+    """Saves a memory for a project. linked_files is "path@hash,..." as link_files returns.
+    Returns the engine's (id, outcome, related id). Used by the remember tool and the dashboard."""
+    args = ["MEM.ADD", project, fact, "SOURCE", source or config.SOURCE, "SESSION", SESSION]
+    if linked_files:
+        args += ["FILES", linked_files]
+    return tuple(run(*args, "VECTOR", *(vector or embed(fact))))
+
+
+def past_versions(project: str, vector: List[str], limit: int = 3) -> List[str]:
+    """Retired, replaced, or possibly outdated memories close to a query, labeled so the AI knows what
+    changed instead of finding out the hard way. Best effort: returns [] on any problem."""
+    lines = []
+    try:
+        hits = []
+        for status in ("stale", "superseded"):
+            hits += [(float(sc), mid, text, status)
+                     for mid, sc, text in run("MEM.SEARCH", project, limit, "STATUS", status, "VECTOR", *vector)]
+        for score, mid, text, status in sorted(hits, reverse=True)[:limit]:
+            if score < config.RELATED_SIMILARITY:
+                continue
+            reason = status_reason(mid)
+            if status == "superseded":
+                label = f"no longer true, {reason}" if reason else "no longer true, replaced by a newer memory"
+            elif reason.endswith(FILE_CHANGE):
+                label = f"possibly outdated: {reason}; check the code before relying on it"
+            else:
+                label = f"no longer true, retired: {reason}" if reason else "no longer true, retired"
+            lines.append(f"[{mid}] \"{text}\" ({label})")
+    except Exception:
+        return []
+    return lines
+
+
 # ---------- tools the AI can call ----------
 
 @mcp.tool()
@@ -310,12 +357,9 @@ def remember(fact: str, files: Optional[List[str]] = None) -> str:
     files: repo-relative paths this fact depends on (e.g. ["docker-compose.yml"]), so the memory
     can be flagged when those files change.
     """
-    args = ["MEM.ADD", project_name(), fact, "SOURCE", config.SOURCE, "SESSION", SESSION]
-    if files:
-        args += ["FILES", link_files(files)]
     try:
         vector = embed(fact)
-        mem_id, outcome, related = run(*args, "VECTOR", *vector)
+        mem_id, outcome, related = add_memory(project_name(), fact, link_files(files) if files else "", vector=vector)
         if outcome == "duplicate":
             return f"Already known as {mem_id}; noted that it came up again. Nothing new was stored."
         reply = f"Saved as {mem_id}."
@@ -342,15 +386,21 @@ def remember(fact: str, files: Optional[List[str]] = None) -> str:
 def recall(query: str, limit: int = 5) -> str:
     """Search this project's shared memory by meaning. Call it at the start of every task, and whenever
     project-specific knowledge (setup, conventions, past decisions) might matter.
-    Only current (active) memories are returned; outdated or replaced ones are skipped."""
+    Current (active) memories come first. Related memories that were retired, replaced, or may be outdated
+    are listed after them, labeled, so you know what changed: never rely on those."""
     try:
         stale = check_staleness()  # so we never hand back a memory whose files changed underneath it
-        hits = run("MEM.SEARCH", project_name(), max(1, min(limit, 20)), "VECTOR", *embed(query))
+        vector = embed(query)
+        hits = run("MEM.SEARCH", project_name(), max(1, min(limit, 20)), "VECTOR", *vector)
     except EngineDown as e:
         return store_down(e)
     lines = [f"[{mid}] (similarity {float(score):.2f}) {text}" for mid, score, text in hits]
     if not lines:
-        lines = ["No memories found for this project yet."]
+        lines = ["No current memories match this."]
+    just_stale = {line.split("]", 1)[0] for line in stale}
+    history = [h for h in past_versions(project_name(), vector) if h.split("]", 1)[0] not in just_stale]
+    if history:
+        lines += ["", "Related memories that are no longer current (don't rely on them; they show what changed):"] + history
     if stale:
         lines += ["", "These memories were just retired because files they depend on changed. If one is still "
                       "true, call confirm_memory; if it's wrong, save the corrected fact with remember:"] + stale
@@ -379,8 +429,9 @@ def explain_memory(memory_id: str) -> str:
 
 @mcp.tool()
 def mark_outdated(memory_id: str, reason: str) -> str:
-    """Mark a memory as no longer true, with a short reason. It stops showing up in recall
-    but keeps its history, so you can still see what it said and why it was retired."""
+    """Mark a memory as no longer true, with a short reason. It stops counting as current but keeps its
+    history. If you know what's true now, save that with remember and call replace_memory instead, so
+    the next session knows the new fact, not just that the old one is wrong."""
     try:
         reply = run("MEM.STATUS", memory_id, "stale", "REASON", reason)
     except EngineDown as e:

@@ -265,13 +265,28 @@ def api_confirm(_q, body) -> dict:
 
 
 def api_retire(_q, body) -> dict:
+    """Retires a memory. With "replacement" (what's true now), also saves that as a new memory, linked to the
+    same files at their current versions, and marks it as replacing the old one, so AI tools learn the new
+    fact in their next session instead of only losing the old one."""
     memory_id = _need(body, "id")
-    reason = (body.get("reason") or "").strip() or "retired from the dashboard"
-    try:
-        server.run("MEM.STATUS", memory_id, "stale", "REASON", reason)
-    except redis.ResponseError as e:
-        raise ApiError(404, str(e))
-    return {"ok": True}
+    reason = (body.get("reason") or "").strip()
+    replacement = " ".join((body.get("replacement") or "").split())
+    got = server.run("MEM.GET", memory_id)
+    if got is None:
+        raise ApiError(404, "No memory with that id.")
+    if not replacement:
+        server.run("MEM.STATUS", memory_id, "stale", "REASON", reason or "retired from the dashboard")
+        return {"ok": True}
+    if len(replacement) > 2000:
+        raise ApiError(400, "That's too long for one memory. Keep it to a sentence or two.")
+    old = _pairs(got)
+    paths = [f["path"] for f in _files(old["files"])]
+    repo = repo_for(old["project"])
+    linked = server.link_files(paths, repo) if paths and repo else ""
+    new_id, _outcome, _related = server.add_memory(old["project"], replacement, linked, source="dashboard")
+    why = f'replaced by {new_id}: "{replacement}"' + (f". Why: {reason}" if reason else "")
+    server.run("MEM.STATUS", memory_id, "superseded", "REASON", why)
+    return {"ok": True, "new_id": new_id}
 
 
 def api_resolve(_q, body) -> dict:

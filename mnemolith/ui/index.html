@@ -177,6 +177,7 @@ code.inline { font-family: var(--mono); font-size: 0.86em; background: var(--sur
   transition: border-color 150ms ease, box-shadow 150ms ease;
 }
 .retire-form input { flex: 1 1 260px; background: var(--surface-2); }
+.retire-form input:first-child { flex-basis: 100%; }
 .retire-form input:focus, .search input:focus { outline: none; border-color: var(--focus); box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus) 20%, transparent); }
 ::placeholder { color: var(--ink-2); opacity: 1; }
 
@@ -763,8 +764,8 @@ const wait = (ms) => new Promise((r) => setTimeout(r, REDUCED ? 0 : ms));
 async function act(button, path, body, done, item, confirming) {
   button.disabled = true;
   try {
-    await api(path, body);
-    notify(done);
+    const result = await api(path, body);
+    notify(typeof done === "function" ? done(result) : done);
     if (item) {
       if (confirming) {
         const d = item.querySelector(".decision");
@@ -785,17 +786,26 @@ async function act(button, path, body, done, item, confirming) {
 }
 
 function retireForm(memory, container, item) {
-  const input = h("input", { type: "text", "aria-label": `Why is ${memory.id} no longer true?`,
-                             placeholder: "Why is it no longer true? (optional)", maxlength: "300" });
+  // Retiring alone only tells your AI the old fact is wrong. Saying what's true now saves the new fact too,
+  // linked to the same files, so the next session knows it.
+  const now = h("input", { type: "text", "aria-label": `What's true now, replacing ${memory.id}?`,
+                           placeholder: "What's true now? Saved as a new memory (optional)", maxlength: "500" });
+  const why = h("input", { type: "text", "aria-label": `Why is ${memory.id} no longer true?`,
+                           placeholder: "Why did it change? (optional)", maxlength: "300" });
   const go = h("button", { class: "btn primary", type: "button",
-    onclick: () => act(go, "/api/retire", { id: memory.id, reason: input.value }, `${memory.id} retired.`, item) }, "Retire");
+    onclick: () => act(go, "/api/retire", { id: memory.id, reason: why.value, replacement: now.value },
+      (r) => r.new_id ? `${memory.id} replaced by ${r.new_id}. Your AI tools will use the new fact.` : `${memory.id} retired.`,
+      item) }, "Retire");
+  now.addEventListener("input", () => { go.textContent = now.value.trim() ? "Save and retire old" : "Retire"; });
   const cancel = h("button", { class: "btn", type: "button", onclick: () => { form.remove(); trigger.hidden = false; trigger.focus(); } }, "Cancel");
-  input.addEventListener("keydown", (e) => { if (e.key === "Enter") go.click(); if (e.key === "Escape") { e.stopPropagation(); cancel.click(); } });
-  const form = h("div", { class: "retire-form" }, input, go, cancel);
+  for (const input of [now, why]) {
+    input.addEventListener("keydown", (e) => { if (e.key === "Enter") go.click(); if (e.key === "Escape") { e.stopPropagation(); cancel.click(); } });
+  }
+  const form = h("div", { class: "retire-form" }, now, why, go, cancel);
   const trigger = container.querySelector(".retire-trigger");
   trigger.hidden = true;
   container.append(form);
-  input.focus();
+  now.focus();
 }
 
 // ---------- rendering ----------
