@@ -4,6 +4,8 @@
 
 **Shared memory for AI coding tools that stays true to your code.**
 
+![Mnemolith demo: a memory goes stale when docker-compose.yml changes, and the user records what is true now](docs/assets/mnemolith-demo.gif)
+
 *Mnemolith (NEE-mo-lith): "memory stone." What your AI learns, carved where every tool can read it. ([Why the name](https://mnemolith.dev/about.html#name))*
 
 > **Formerly Aether Cache.** If you installed `aether-cache`, see [Moving from Aether Cache](#moving-from-aether-cache): your memories come with you.

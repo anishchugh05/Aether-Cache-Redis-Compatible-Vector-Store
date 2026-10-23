@@ -21,7 +21,7 @@
           document.documentElement.dataset.theme = t;
       } catch (e) {}
     </script>
-    <link href="assets/site.css?v=8" rel="stylesheet" />
+    <link href="assets/site.css?v=9" rel="stylesheet" />
     <link
       as="font"
       crossorigin=""
@@ -241,6 +241,36 @@
           role="status"
         ></div>
       </section>
+      <section class="dashboard-section demo-section wrap" aria-labelledby="demo-title">
+        <div class="section-lead">
+          <h2 id="demo-title">See it in 30 seconds.</h2>
+          <p>
+            Claude Code saves a memory linked to <code>docker-compose.yml</code>.
+            The project switches from Postgres to MySQL. Mnemolith flags the
+            memory, you say what&rsquo;s true now, and the next session gets the
+            new fact instead of the old one.
+          </p>
+        </div>
+        <figure class="dashboard-window">
+          <figcaption class="dashboard-window-bar">
+            <span>Mnemolith demo</span><span>30 seconds, no sound</span>
+          </figcaption>
+          <video
+            class="demo-video"
+            src="assets/mnemolith-demo.mp4"
+            poster="assets/mnemolith-demo-poster.jpg"
+            width="1920"
+            height="1080"
+            autoplay
+            muted
+            loop
+            playsinline
+            controls
+            preload="metadata"
+            aria-label="Demo: Claude Code saves a memory that the database is Postgres. After docker-compose.yml switches to MySQL, Mnemolith flags the memory, the user records that the database is now MySQL, and a new Claude session answers MySQL."
+          ></video>
+        </figure>
+      </section>
       <section class="dashboard-section wrap" aria-labelledby="dashboard-title">
         <div class="section-lead">
           <h2 id="dashboard-title">See and fix what your AI remembers.</h2>
@@ -404,6 +434,6 @@
       id="copy-status"
       role="status"
     ></div>
-    <script defer="" src="assets/site.js?v=8"></script>
+    <script defer="" src="assets/site.js?v=9"></script>
   </body>
 </html>

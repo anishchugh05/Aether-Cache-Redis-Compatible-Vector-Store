@@ -353,3 +353,12 @@
     });
   });
 })();
+
+// The homepage demo plays on its own, except for people who asked their system to reduce motion.
+(function () {
+  var video = document.querySelector(".demo-video");
+  if (video && window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    video.removeAttribute("autoplay");
+    video.pause();
+  }
+})();

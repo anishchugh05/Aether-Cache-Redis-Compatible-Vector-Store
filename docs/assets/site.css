@@ -2161,6 +2161,15 @@ main:focus {
   max-width: 1440px;
   height: auto;
 }
+.dashboard-window video {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: #10282a;
+}
+.demo-section {
+  padding-bottom: 0;
+}
 .dashboard-command {
   width: min(100%, 400px);
   margin: 20px auto 0;
