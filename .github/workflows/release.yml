@@ -1,6 +1,6 @@
 # Releases a new version when a version tag is pushed:
 #
-#   git tag v0.2.1 && git push --tags
+#   git tag v0.2.2 && git push --tags
 #
 # 1. Checks the tag matches the version in pyproject.toml, mnemolith/__init__.py and server.json.
 # 2. Builds the package and smoke-tests it (installs it and checks `mnemolith --version`), plus the final

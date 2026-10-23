@@ -232,6 +232,41 @@ def cmd_add(args) -> int:
     return 0
 
 
+def cmd_remove(args) -> int:
+    """Removes a project, like Remove project in the dashboard: retires its memories (kept, with their history)
+    and hides it until it's used again or added back."""
+    from pathlib import Path
+    from . import repos, ui
+    from .server import EngineDown, store_down
+    name = args.name or config.project_override()
+    if not name:  # this folder's project, named the way the AI tools name it
+        here = Path.cwd()
+        name = (repos.git_top(here) or here.resolve()).name
+    try:
+        engine.ensure_running()
+        projects = {p["name"]: p for p in ui.api_projects(None, None)["projects"]}
+        if name not in projects:
+            print(f"There's no project called {name} in Mnemolith."
+                  + (f" Projects: {', '.join(sorted(projects))}." if projects else ""))
+            return 1
+        counts = projects[name]["counts"]
+        live = counts["active"] + counts["stale"]
+        print(f"Removing {name}." + (f" Its {live} {'memory' if live == 1 else 'memories'} will be retired, so your AI "
+                                     f"tools stop using {'it' if live == 1 else 'them'}." if live else "")
+              + " Nothing is deleted: export first with `mnemolith export` if you want a copy.")
+        if not args.yes and not _ask(f"Remove {name}?"):
+            print("Nothing changed." + ("" if sys.stdin.isatty() else " Add --yes to remove without asking."))
+            return 1
+        result = ui.api_remove(None, {"name": name})
+    except (engine.EngineError, EngineDown) as e:
+        print(store_down(e))
+        return 1
+    retired = result.get("retired", 0)
+    print(f"Removed {name}" + (f" and retired {retired} {'memory' if retired == 1 else 'memories'}." if retired else ".")
+          + " Using it with an AI tool again, or `mnemolith add`, brings it back.")
+    return 0
+
+
 def _ask(question: str) -> bool:
     if not sys.stdin.isatty():
         return False
@@ -427,6 +462,10 @@ def main(argv=None) -> None:
     p = sub.add_parser("add", help="add a repo so the dashboard can check its files (default: this folder)")
     p.add_argument("path", nargs="?", default=".")
     p.set_defaults(func=cmd_add)
+    p = sub.add_parser("remove", help="remove a project, like Remove project in the dashboard (default: this folder's)")
+    p.add_argument("name", nargs="?", help="the project's name, as the dashboard shows it")
+    p.add_argument("--yes", "-y", action="store_true", help="don't ask for confirmation")
+    p.set_defaults(func=cmd_remove)
     p = sub.add_parser("import", help="turn notes in CLAUDE.md, AGENTS.md, and Cursor rules into memories")
     p.add_argument("path", nargs="?", default=".", help="the repo to import from (default: this folder)")
     p.add_argument("--yes", "-y", action="store_true", help="import without asking")

@@ -150,6 +150,7 @@ the engine only accepts connections from it, and your memories live in `~/.mnemo
 | `mnemolith add` | Adds the repo you're in (or a path) so the dashboard can check its files; the dashboard can also find and add repos for you |
 | `mnemolith ui` | Opens the dashboard: see what your AI remembers, and confirm or retire memories whose files changed |
 | `mnemolith import` | Turns the notes in `CLAUDE.md`, `AGENTS.md`, and Cursor rules into memories; shows them first and asks |
+| `mnemolith remove` | Removes a project (default: the one you're in), like **Remove project** in the dashboard: its memories are retired, not deleted |
 | `mnemolith export` | Saves memories, with their linked files and history, to a JSON file (`-p` for one project) |
 | `mnemolith status` | Is it running, and what's in this project's memory |
 | `mnemolith doctor` | Checks everything and tells you how to fix what's wrong |
@@ -398,7 +399,7 @@ crash_test.py                kill -9 crash-safety test
 Bump the version in `pyproject.toml`, `mnemolith/__init__.py`, and `server.json`, commit, then:
 
 ```sh
-git tag v0.2.1 && git push --tags
+git tag v0.2.2 && git push --tags
 ```
 
 The [release workflow](.github/workflows/release.yml) checks the versions match, builds and smoke-tests the package,
